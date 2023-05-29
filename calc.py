@@ -51,6 +51,7 @@ def t_newline(t):
 
 
 t_ignore_COMMENT = r"\#.*"
+# check if it works properly
 t_ignore = " \t"
 
 
@@ -61,6 +62,13 @@ def t_error(t):
 
 # Parser part
 
+start = "program"
+
+
+def p_program(p):
+    "program : expression_list"
+    p[0] = p[1]
+
 
 def p_expression_binop(p):
     """expression : expression PLUS expression
@@ -68,14 +76,6 @@ def p_expression_binop(p):
     | expression TIMES expression"""
 
     p[0] = BinOp(p[1], p[2], p[3])
-
-
-start = "program"
-
-
-def p_program(p):
-    "program : expression_list"
-    p[0] = p[1]
 
 
 def p_expression_single_one(p):
