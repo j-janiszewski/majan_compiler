@@ -197,6 +197,22 @@ class Write(InstructionNode):
         return (0, id_type)
     
 
+class Read(InstructionNode):
+    def __init__(self, line_no, value) -> None:
+        super().__init__(line_no, value)
+        self.type = "read"
+
+    def check_semantics(self, variables_dict):
+        if not self.left.name in variables_dict:
+            print(f"ERROR: Undeclared variable (line: {self.line_no}) ")
+            return (1, "")
+        id_type = variables_dict[self.left.name]
+        if id_type == Types.Bool:
+            print(f"ERROR: Reading to bool variable is not allowed (line: {self.line_no}) ")
+            return (1, "")
+        return (0, id_type)
+    
+
 class AST:
     def __init__(self, root: Instructions) -> None:
         self.root = root
