@@ -112,7 +112,9 @@ def p_program(p):
 
 def p_lines_single_one(p):
     "lines : instruction"
-    p[0] = p[1]
+    node = Instructions(p.lineno(1))
+    node.instructions.insert(0, p[1])
+    p[0] = node
 
 
 def p_lines_list(p):
