@@ -1,15 +1,28 @@
 import ply.lex as lex
 import ply.yacc as yacc
-from nodes import IntValue, FloatValue, BinOp, Variable, Instructions
+from nodes import (
+    IntValue,
+    FloatValue,
+    BinOp,
+    Variable,
+    Instructions,
+    Types,
+    Init,
+    BoolValue,
+    Assign,
+)
 
 tokens = (
     "FLOAT_VALUE",
     "INT_VALUE",
+    "BOOL_VALUE",
     "PLUS",
     "MINUS",
     "TIMES",
     "DIVIDE",
     "COMMA",
+    "ASSIGNMENT",
+    "SEMICOLON",
     "ID",
     "IF",
     "ELSE",
@@ -29,6 +42,8 @@ t_DIVIDE = r"/"
 t_COMMA = r","
 t_LPAREN = r"\("
 t_RPAREN = r"\)"
+t_SEMICOLON = r";"
+t_ASSIGNMENT = r"="
 
 reserved = {
     "if": "IF",
@@ -37,23 +52,32 @@ reserved = {
     "int": "INT",
     "float": "FLOAT",
     "bool": "BOOL",
+    "true": "BOOL_VALUE",
+    "false": "BOOL_VALUE",
 }
 
 precedence = (
-    ('left', 'PLUS', 'MINUS'),
-    ('left', 'TIMES', 'DIVIDE'),
+    ("left", "PLUS", "MINUS"),
+    ("left", "TIMES", "DIVIDE"),
 )
 
 
 def t_ID(t):
     r"[a-zA-Z_][a-zA-Z_0-9]*"
     t.type = reserved.get(t.value, "ID")  # Check for reserved words
+    if t.type == "BOOL_VALUE":
+        if t.value == "true":
+            t.value = 1
+        else:
+            t.value = 0
     return t
+
 
 def t_FLOAT_VALUE(t):
     r"[-+]?[0-9]+\.[0-9]*"
     t.value = float(t.value)
     return t
+
 
 def t_INT_VALUE(t):
     r"([+-]?[1-9]\d*|0)"
@@ -82,8 +106,32 @@ start = "program"
 
 
 def p_program(p):
-    "program : expression_list"
+    "program : lines"
     p[0] = p[1]
+
+
+def p_lines_single_one(p):
+    "lines : instruction"
+    p[0] = p[1]
+
+
+def p_lines_list(p):
+    "lines : instruction lines"
+    node = Instructions(p[2])
+    node.instructions.insert(0, p[1])
+    p[0] = node
+
+
+def p_instruction(p):
+    """instruction : expression SEMICOLON
+    | init SEMICOLON"""
+    p[0] = p[1]
+
+
+def p_instruction_assignment(p):
+    "instruction : ID ASSIGNMENT expression SEMICOLON"
+    node = Assign(Variable(p[1]), p[3])
+    p[0] = node
 
 
 def p_expression_binop(p):
@@ -94,78 +142,85 @@ def p_expression_binop(p):
 
     p[0] = BinOp(p[1], p[2], p[3])
 
+
 def p_expression_groupop(p):
-    'expression : LPAREN expression RPAREN'
+    "expression : LPAREN expression RPAREN"
     p[0] = p[2]
 
-def p_expression_single_one(p):
-    "expression_list : expression"
-    p[0] = p[1]
 
-
-def p_expression_list(p):
-    "expression_list : expression expression_list"
-    node = Instructions(p[2])
-    node.instructions.insert(0, p[1])
-    p[0] = node
+def p_expression_variable(p):
+    "expression : ID"
+    p[0] = Variable(p[1])
 
 
 def p_expression_int_value(p):
     "expression : INT_VALUE"
     p[0] = IntValue(p[1])
 
+
 def p_expression_float_value(p):
     "expression : FLOAT_VALUE"
     p[0] = FloatValue(p[1])
 
 
+def p_expression_bool_value(p):
+    "expression : BOOL_VALUE"
+    p[0] = BoolValue(p[1])
+
+
 def p_expression_int_vars_init(p):
-    "expression : INT int_ids"
-    p[0] = p[2]
+    "init : INT int_ids"
+    init_node = Init(Types.Int)
+    init_node.left = p[2]
+    p[0] = init_node
 
 
 def p_int_id_single(p):
     "int_ids : ID"
-    p[0] = Variable(p[1], "int")
+    p[0] = Variable(p[1], Types.Int)
 
 
 def p_int_ids(p):
     """int_ids : int_ids COMMA ID"""
-    node = Variable(p[3], "int")
+    node = Variable(p[3], Types.Int)
     node.left = p[1]
     p[0] = node
 
 
 def p_expression_float_vars_init(p):
-    "expression : FLOAT float_ids"
-    p[0] = p[2]
+    "init : FLOAT float_ids"
+    init_node = Init(Types.Float)
+    init_node.left = p[2]
+    p[0] = init_node
 
 
 def p_float_id_single(p):
     "float_ids : ID"
-    p[0] = Variable(p[1], "float")
+    p[0] = Variable(p[1], Types.Float)
 
 
 def p_float_ids(p):
     """float_ids : float_ids COMMA ID"""
-    node = Variable(p[3], "float")
+    node = Variable(p[3], Types.Float)
     node.left = p[1]
     p[0] = node
 
 
 def p_expression_bool_vars_init(p):
-    "expression : BOOL bool_ids"
-    p[0] = p[2]
+    "init : BOOL bool_ids"
+    init_node = Init(Types.Bool)
+    init_node.left = p[2]
+    p[0] = init_node
 
 
 def p_bool_id_single(p):
     "bool_ids : ID"
-    p[0] = Variable(p[1], "bool")
+    p[0] = Variable(p[1], Types.Bool)
 
 
 def p_bool_ids(p):
     """bool_ids : bool_ids COMMA ID"""
-    node = Variable(p[3], "bool")
+    node = Variable(p[3], Types.Bool)
     node.left = p[1]
     p[0] = node
 
@@ -180,7 +235,7 @@ lexer = lex.lex()
 
 # testing
 data = """
-3 / (4. + 10) + 5 \n int num, num2, num4 \n float tuto, tiki, tson
+3 / (4. + 10) + 5 - 3;\n int num, num2, num4; \n float tuto, tiki, tson; \n tuto = 6. /2; num = true;
 """
 
 
@@ -190,3 +245,9 @@ parser = yacc.yacc()
 result = parser.parse(data)
 
 print(result)
+
+from nodes import AST
+
+ast = AST(result)
+
+ast.check_semantic_errors()
