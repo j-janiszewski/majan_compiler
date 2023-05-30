@@ -10,6 +10,7 @@ from nodes import (
     Init,
     BoolValue,
     Assign,
+    Write,
 )
 
 tokens = (
@@ -32,6 +33,7 @@ tokens = (
     "BOOL",
     "LPAREN",
     "RPAREN",
+    "WRITE",
 )
 
 
@@ -54,6 +56,7 @@ reserved = {
     "bool": "BOOL",
     "true": "BOOL_VALUE",
     "false": "BOOL_VALUE",
+    "write": "WRITE",
 }
 
 precedence = (
@@ -124,7 +127,8 @@ def p_lines_list(p):
 
 def p_instruction(p):
     """instruction : expression SEMICOLON
-    | init SEMICOLON"""
+    | init SEMICOLON
+    | write SEMICOLON"""
     p[0] = p[1]
 
 
@@ -225,6 +229,11 @@ def p_bool_ids(p):
     p[0] = node
 
 
+def p_expression_write(p):
+    "write : WRITE LPAREN expression RPAREN"
+    p[0] = Write(p.lineno(3), p[3])
+
+
 def p_error(p):
     print(f"Syntax error in input in line: {p.lineno}!")
     print(p)
@@ -235,7 +244,7 @@ lexer = lex.lex()
 
 # testing
 data = """
-3 / (4. + 10) + 5 - 3;\n int num, num2, num4; \n float tuto, tiki, tson; \n tuto = 6. /2; num = true;
+3 / (4. + 10) + 5 - 3;\n int num, num2, num4; \n float tuto, tiki, tson; \n tuto = 6. /2; write(2 + 3);\n num = true;
 """
 
 

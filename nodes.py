@@ -181,6 +181,22 @@ class BoolValue(Value):
         super().__init__(line_no, value, Types.Bool)
 
 
+class InstructionNode(Node):
+    pass
+
+
+class Write(InstructionNode):
+    def __init__(self, line_no, value) -> None:
+        super().__init__(line_no, value)
+        self.type = "write"
+
+    def check_semantics(self, variables_dict):
+        left_semantic_check, id_type = self.left.check_semantics(variables_dict)
+        if left_semantic_check != 0:
+            return (1, "")
+        return (0, id_type)
+    
+
 class AST:
     def __init__(self, root: Instructions) -> None:
         self.root = root
@@ -203,6 +219,10 @@ class AST:
                     variables_dict[left_node.name] = variable_type
                     left_node = left_node.left
             elif isinstance(node, Expression):
+                semantic_check, _ = node.check_semantics(variables_dict)
+                if semantic_check != 0:
+                    return 1
+            elif isinstance(node, InstructionNode):
                 semantic_check, _ = node.check_semantics(variables_dict)
                 if semantic_check != 0:
                     return 1
