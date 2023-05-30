@@ -117,7 +117,7 @@ def p_lines_single_one(p):
 
 def p_lines_list(p):
     "lines : instruction lines"
-    node = Instructions(p[2])
+    node = Instructions(p.lineno(1), p[2])
     node.instructions.insert(0, p[1])
     p[0] = node
 
@@ -130,7 +130,7 @@ def p_instruction(p):
 
 def p_instruction_assignment(p):
     "instruction : ID ASSIGNMENT expression SEMICOLON"
-    node = Assign(Variable(p[1]), p[3])
+    node = Assign(p.lineno(1), Variable(p.lineno(2), p[1]), p[3])
     p[0] = node
 
 
@@ -140,7 +140,7 @@ def p_expression_binop(p):
     | expression TIMES expression
     | expression DIVIDE expression"""
 
-    p[0] = BinOp(p[1], p[2], p[3])
+    p[0] = BinOp(p.lineno(2), p[1], p[2], p[3])
 
 
 def p_expression_groupop(p):
@@ -150,77 +150,77 @@ def p_expression_groupop(p):
 
 def p_expression_variable(p):
     "expression : ID"
-    p[0] = Variable(p[1])
+    p[0] = Variable(p.lineno(1), p[1])
 
 
 def p_expression_int_value(p):
     "expression : INT_VALUE"
-    p[0] = IntValue(p[1])
+    p[0] = IntValue(p.lineno(1), p[1])
 
 
 def p_expression_float_value(p):
     "expression : FLOAT_VALUE"
-    p[0] = FloatValue(p[1])
+    p[0] = FloatValue(p.lineno(1), p[1])
 
 
 def p_expression_bool_value(p):
     "expression : BOOL_VALUE"
-    p[0] = BoolValue(p[1])
+    p[0] = BoolValue(p.lineno(1), p[1])
 
 
 def p_expression_int_vars_init(p):
     "init : INT int_ids"
-    init_node = Init(Types.Int)
+    init_node = Init(p.lineno(1), Types.Int)
     init_node.left = p[2]
     p[0] = init_node
 
 
 def p_int_id_single(p):
     "int_ids : ID"
-    p[0] = Variable(p[1], Types.Int)
+    p[0] = Variable(p.lineno(1), p[1], Types.Int)
 
 
 def p_int_ids(p):
     """int_ids : int_ids COMMA ID"""
-    node = Variable(p[3], Types.Int)
+    node = Variable(p.lineno(3), p[3], Types.Int)
     node.left = p[1]
     p[0] = node
 
 
 def p_expression_float_vars_init(p):
     "init : FLOAT float_ids"
-    init_node = Init(Types.Float)
+    init_node = Init(p.lineno(1), Types.Float)
     init_node.left = p[2]
     p[0] = init_node
 
 
 def p_float_id_single(p):
     "float_ids : ID"
-    p[0] = Variable(p[1], Types.Float)
+    p[0] = Variable(p.lineno(1), p[1], Types.Float)
 
 
 def p_float_ids(p):
     """float_ids : float_ids COMMA ID"""
-    node = Variable(p[3], Types.Float)
+    node = Variable(p.lineno(3), p[3], Types.Float)
     node.left = p[1]
     p[0] = node
 
 
 def p_expression_bool_vars_init(p):
     "init : BOOL bool_ids"
-    init_node = Init(Types.Bool)
+    init_node = Init(p.lineno(1), Types.Bool)
     init_node.left = p[2]
     p[0] = init_node
 
 
 def p_bool_id_single(p):
     "bool_ids : ID"
-    p[0] = Variable(p[1], Types.Bool)
+    p[0] = Variable(p.lineno(1), p[1], Types.Bool)
 
 
 def p_bool_ids(p):
     """bool_ids : bool_ids COMMA ID"""
-    node = Variable(p[3], Types.Bool)
+    node = Variable(p.lineno(3), p[3], Types.Bool)
     node.left = p[1]
     p[0] = node
 

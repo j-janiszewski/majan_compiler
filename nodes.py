@@ -8,9 +8,10 @@ class Types(Enum):
 
 
 class Node:
-    def __init__(self, left=None, right=None) -> None:
+    def __init__(self, line_no, left=None, right=None) -> None:
         self.left = left
         self.right = right
+        self.line_no = line_no
 
     def __str__(self, indent_level=0, additional_info=None):
         indentation = " " * 4 * indent_level
@@ -31,8 +32,8 @@ class Expression(Node):
 
 
 class BinOp(Expression):
-    def __init__(self, left, op, right):
-        super().__init__(left, right)
+    def __init__(self, line_no, left, op, right):
+        super().__init__(line_no, left, right)
         self.type = "binop"
         self.op = op
 
@@ -63,8 +64,9 @@ class BinOp(Expression):
 
     def __handle_arithmetic_operator(self, operation_name, left_type, right_type):
         if left_type == Types.Bool or right_type == Types.Bool:
-            # TODO: dodać zapamietywanie linijki i ja wyswietlac tutaj
-            print(f"{operation_name} bool type is not allowed, error in line: ")
+            print(
+                f"ERROR: {operation_name} bool type is not allowed (line: {self.line_no}) "
+            )
             return (1, "")
         if left_type == right_type == Types.Int:
             return (0, Types.Int)
@@ -75,8 +77,8 @@ class BinOp(Expression):
 
 
 class Instructions(Node):
-    def __init__(self, instructions_node=None) -> None:
-        super().__init__()
+    def __init__(self, line_no, instructions_node=None) -> None:
+        super().__init__(line_no)
         if instructions_node:
             if isinstance(instructions_node, Instructions):
                 self.instructions = instructions_node.instructions
@@ -94,8 +96,8 @@ class Instructions(Node):
 
 
 class Init(Node):
-    def __init__(self, variable_type) -> None:
-        super().__init__()
+    def __init__(self, line_no, variable_type) -> None:
+        super().__init__(line_no)
         self.variable_type = variable_type
         self.type = "init node"
 
@@ -104,8 +106,8 @@ class Init(Node):
 
 
 class Assign(Expression):
-    def __init__(self, left, right) -> None:
-        super().__init__(left, right)
+    def __init__(self, line_no, left, right) -> None:
+        super().__init__(line_no, left, right)
         self.type = "assign node"
 
     def check_semantics(self, variables_dict):
@@ -119,9 +121,8 @@ class Assign(Expression):
             if id_type == Types.Float and exp_type == Types.Int:
                 return (0, Types.Float)
             else:
-                # TODO ADD LINE NUMBERS
                 print(
-                    f"ERROR: Assignment to variable of type {id_type.value} exp of type {exp_type.value} at line: "
+                    f"ERROR: Assignment to variable of type {id_type.value} exp of type {exp_type.value} (line: {self.line_no}) "
                 )
                 return (1, "")
         return (0, id_type)
@@ -131,16 +132,15 @@ class Assign(Expression):
 
 
 class Variable(Node):
-    def __init__(self, name, variable_type=None) -> None:
-        super().__init__()
+    def __init__(self, line_no, name, variable_type=None) -> None:
+        super().__init__(line_no)
         self.type = "variable"
         self.name = name
         self.variable_type = variable_type
 
     def check_semantics(self, variables_dict):
         if not self.name in variables_dict:
-            # TODO add LINE NUMBER
-            print("Undeclared variable at line: ")
+            print(f"ERROR: Undeclared variable (line: {self.line_no}) ")
             return (1, "")
         return (0, variables_dict[self.name])
 
@@ -151,8 +151,8 @@ class Variable(Node):
 
 
 class Value(Node):
-    def __init__(self, value, value_type) -> None:
-        super().__init__()
+    def __init__(self, line_no, value, value_type) -> None:
+        super().__init__(line_no)
         self.type = "value"
         self.value = value
         self.value_type = value_type
@@ -167,18 +167,18 @@ class Value(Node):
 
 
 class IntValue(Value):
-    def __init__(self, value):
-        super().__init__(value, Types.Int)
+    def __init__(self, line_no, value):
+        super().__init__(line_no, value, Types.Int)
 
 
 class FloatValue(Value):
-    def __init__(self, value):
-        super().__init__(value, Types.Float)
+    def __init__(self, line_no, value):
+        super().__init__(line_no, value, Types.Float)
 
 
 class BoolValue(Value):
-    def __init__(self, value):
-        super().__init__(value, Types.Bool)
+    def __init__(self, line_no, value):
+        super().__init__(line_no, value, Types.Bool)
 
 
 class AST:
@@ -196,7 +196,9 @@ class AST:
                 while left_node:
                     if left_node.name in variables_dict:
                         # TODO LINE NUMBER
-                        print("Variable already defined, error at line:")
+                        print(
+                            f"ERROR: Variable already defined, (line: {left_node.line_no})"
+                        )
                         return 1
                     variables_dict[left_node.name] = variable_type
                     left_node = left_node.left
