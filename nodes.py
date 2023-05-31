@@ -117,8 +117,6 @@ class BinOp(Instruction):
         if self.op in ["+", "-", "*", "/"]:
             left_type, left_mem_id, left_val = self.left.write_code(output_lines)
             right_type, right_mem_id, right_val = self.right.write_code(output_lines)
-            if isinstance(self.left, Assign):
-                print(f"BinOp -> Assign TODO")  # TODO Assign
 
             if left_type != right_type:
                 return_type = Types.Float
@@ -193,27 +191,6 @@ class BinOp(Instruction):
             return return_type, ProgramMemory.mem_counter - 1, ""
 
         return None, -1, "TODO"  # TODO other operations
-
-
-class UnOp(Instruction):
-    def __init__(self, line_no, left, op) -> None:
-        super().__init__(line_no, left)
-        self.type = "unop"
-        self.op = op
-
-    def __str__(self, indent_level=0):
-        return super().__str__(indent_level, f"({self.op})")
-
-    def check_semantics(self, variables_dict):
-        left_semantic_check, left_type = self.left.check_semantics(variables_dict)
-        if left_semantic_check != 0:
-            return (1, "")
-        if left_type != Types.Bool:
-            print(
-                "ERROR: Negation is only allowed for bool type (line: {self.line_no})"
-            )
-        else:
-            return (0, Types.Bool)
 
 
 class Instructions(Node):
@@ -339,7 +316,7 @@ class Value(Node):
         )
 
     def write_code(self, output_lines):
-        return self.value_type, -1, self.value  # TODO check
+        return self.value_type, -1, self.value
 
 
 class IntValue(Value):
@@ -367,9 +344,6 @@ class Write(Instruction):
         if left_semantic_check != 0:
             return (1, "")
         return (0, id_type)
-
-    def write_code(self, output_lines):
-        pass
 
 
 class Read(Instruction):
@@ -421,9 +395,7 @@ class AST:
                     return 1
 
     def create_llvm_output(self, filename):
-        variables_dict = dict()  # TODO check if ProgramMemory works correctly
         output_lines = []
-        initiation_section = True
         # TODO Check if everything below is needed
         output_lines.append(f'@int = constant [ 3 x i8] c"%d\\00"')
         output_lines.append(f'@double = constant [ 4 x i8] c"%lf\\00"')
@@ -442,14 +414,15 @@ class AST:
             join_and_write_to_file_ll(filename, output_lines)
             return
         for node in self.root.instructions:
-            if not isinstance(node, Init):
-                ProgramMemory.variables_dict = variables_dict
-                initiation_section = False
             if isinstance(node, Init):
                 var_type = node.variable_type
                 next = node.left
                 while next:
-                    variables_dict[next.name] = (var_type, 0, ProgramMemory.mem_counter)
+                    ProgramMemory.variables_dict[next.name] = (
+                        var_type,
+                        0,
+                        ProgramMemory.mem_counter,
+                    )
                     next.write_init_code(output_lines)
                     next = next.left
             elif isinstance(node, Instruction):
