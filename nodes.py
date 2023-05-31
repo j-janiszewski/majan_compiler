@@ -27,11 +27,11 @@ class Node:
         return node_as_text
 
 
-class Expression(Node):
+class Instruction(Node):
     pass
 
 
-class BinOp(Expression):
+class BinOp(Instruction):
     def __init__(self, line_no, left, op, right):
         super().__init__(line_no, left, right)
         self.type = "binop"
@@ -105,7 +105,7 @@ class Init(Node):
         return super().__str__(indent_level, f"(type: {self.variable_type})")
 
 
-class Assign(Expression):
+class Assign(Instruction):
     def __init__(self, line_no, left, right) -> None:
         super().__init__(line_no, left, right)
         self.type = "assign node"
@@ -181,11 +181,7 @@ class BoolValue(Value):
         super().__init__(line_no, value, Types.Bool)
 
 
-class InstructionNode(Node):
-    pass
-
-
-class Write(InstructionNode):
+class Write(Instruction):
     def __init__(self, line_no, value) -> None:
         super().__init__(line_no, value)
         self.type = "write"
@@ -197,7 +193,7 @@ class Write(InstructionNode):
         return (0, id_type)
     
 
-class Read(InstructionNode):
+class Read(Instruction):
     def __init__(self, line_no, value) -> None:
         super().__init__(line_no, value)
         self.type = "read"
@@ -234,11 +230,7 @@ class AST:
                         return 1
                     variables_dict[left_node.name] = variable_type
                     left_node = left_node.left
-            elif isinstance(node, Expression):
-                semantic_check, _ = node.check_semantics(variables_dict)
-                if semantic_check != 0:
-                    return 1
-            elif isinstance(node, InstructionNode):
+            elif isinstance(node, Instruction):
                 semantic_check, _ = node.check_semantics(variables_dict)
                 if semantic_check != 0:
                     return 1
