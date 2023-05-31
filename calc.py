@@ -82,7 +82,7 @@ precedence = (
 
 
 def t_STRING_VALUE(t):
-    r"\"([^\"]*)\" "
+    r"\"([^\"]*)\""
     t.value = t.value.strip('"')
     return t
 
@@ -312,7 +312,7 @@ data = """
 int a;
 int b;
 a / 2 - 1 * 3;
-write(a / 2 - 1 * 3)
+write(a / 2 - 1 * 3);
 """
 
 

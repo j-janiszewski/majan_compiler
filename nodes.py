@@ -90,7 +90,7 @@ class BinOp(Instruction):
             return (1, "")
         if right_type in [Types.Bool, Types.String]:
             print(
-                f"ERROR: {left_type.value} on the right side of {operation_name} is not allowed (line: {self.line_no})"
+                f"ERROR: {right_type.value} on the right side of {operation_name} is not allowed (line: {self.line_no})"
             )
             return (1, "")
         if left_type == right_type == Types.Int:
@@ -105,10 +105,13 @@ class BinOp(Instruction):
             return (1, "")
         if right_type in [Types.Float, Types.Int, Types.String]:
             print(
-                f"ERROR: {left_type.value} on the right side of {operation_name} is not allowed (line: {self.line_no})"
+                f"ERROR: {right_type.value} on the right side of {operation_name} is not allowed (line: {self.line_no})"
             )
             return (1, "")
         return (0, Types.Bool)
+
+    def __str__(self, indent_level=0):
+        return super().__str__(indent_level, f"({self.op})")
 
     def __str__(self, indent_level=0):
         return super().__str__(indent_level, f"({self.op})")
@@ -146,6 +149,7 @@ class BinOp(Instruction):
                     ProgramMemory.mem_counter += 1
             else:
                 return_type = left_type
+
     def write_code(self, output_lines):
         if self.op in ["+", "-", "*", "/"]:
             left_type, left_mem_id, left_val = self.left.write_code(output_lines)
@@ -226,50 +230,26 @@ class BinOp(Instruction):
         return None, -1, "TODO"  # TODO other operations
 
 
-            if left_type is Types.Int and right_type is Types.Int:
-                result_type = "i32"
-                prefix = ""
-            else:
-                result_type = "float"
-                prefix = "f"
-            if result_type == "i32" and self.op == "/":
-                prefix = "u"
+class UnOp(Instruction):
+    def __init__(self, line_no, left, op) -> None:
+        super().__init__(line_no, left)
+        self.type = "unop"
+        self.op = op
 
-            operation = ""
-            if self.op == "+":
-                print(f"OPERATION: {self.op}")
-                operation = "add "
-            elif self.op == "-":
-                print(f"OPERATION: {self.op}")
-                operation = "sub "
-            elif self.op == "*":
-                print(f"OPERATION: {self.op}")
-                operation = "mul "
-            elif self.op == "/":
-                print(f"OPERATION: {self.op}")
-                operation = "div "
+    def __str__(self, indent_level=0):
+        return super().__str__(indent_level, f"({self.op})")
 
-            if left_val != "" and right_val != "":
-                output_lines.append(
-                    f"  %{ProgramMemory.mem_counter} = {prefix}{operation} {result_type} {left_val}, {right_val}"
-                )
-            elif left_val != "":
-                output_lines.append(
-                    f"  %{ProgramMemory.mem_counter} = {prefix}{operation} {result_type} {left_val}, %{right_mem_id}"
-                )
-            elif right_val != "":
-                output_lines.append(
-                    f"  %{ProgramMemory.mem_counter} = {prefix}{operation} {result_type} %{left_mem_id}, {right_val}"
-                )
-            else:
-                output_lines.append(
-                    f"  %{ProgramMemory.mem_counter} = {prefix}{operation} {result_type} %{left_mem_id}, %{right_mem_id}"
-                )
-
-            ProgramMemory.mem_counter += 1
-            return return_type, ProgramMemory.mem_counter - 1, ""
-
-        return None, -1, "TODO"  # TODO other operations
+    def check_semantics(self, variables_dict):
+        left_semantic_check, left_type = self.left.check_semantics(variables_dict)
+        if left_semantic_check != 0:
+            return (1, "")
+        if left_type != Types.Bool:
+            print(
+                "ERROR: Negation is only allowed for bool type (line: {self.line_no})"
+            )
+            return (1, "")
+        else:
+            return (0, Types.Bool)
 
 
 class Instructions(Node):
@@ -429,29 +409,21 @@ class Write(Instruction):
         if type == Types.Int:
             if val != "":
                 output_lines.append(
-                    "call i32(i8*, ...) @printf(i8* bitcast([3 x i8]* @int to i8 *), i32 "
-                    + val
-                    + ")"
+                    f"call i32(i8*, ...) @printf(i8* bitcast([3 x i8]* @int to i8 *), i32 {val})"
                 )
             else:
                 output_lines.append(
-                    "call i32(i8*, ...) @printf(i8* bitcast([4 x i8]* @double to i8 *), double %"
-                    + mem_id
-                    + ")"
+                    f"call i32(i8*, ...) @printf(i8* bitcast([3 x i8]* @int to i8 *), i32 %{mem_id})"
                 )
             ProgramMemory.mem_counter += 1
         if type == Types.Float:
             if val != "":
                 output_lines.append(
-                    "call i32(i8*, ...) @printf(i8* bitcast([4 x i8]* @double to i8 *), double "
-                    + val
-                    + ")"
+                    f"call i32(i8*, ...) @printf(i8* bitcast([4 x i8]* @double to i8 *), double {val})"
                 )
             else:
                 output_lines.append(
-                    "call i32(i8*, ...) @printf(i8* bitcast([4 x i8]* @double to i8 *), double %"
-                    + mem_id
-                    + ")"
+                    f"call i32(i8*, ...) @printf(i8* bitcast([4 x i8]* @double to i8 *), double %{mem_id})"
                 )
             ProgramMemory.mem_counter += 1
         if type == Types.Bool:
@@ -461,35 +433,25 @@ class Write(Instruction):
             ProgramMemory.labels_count += 3
             if val != "":
                 output_lines.append(
-                    "br i1 "
-                    + val
-                    + ", label %l"
-                    + then_label
-                    + ", label %l"
-                    + else_label
+                    f"br i1 {val}, label %l{then_label}, label %l{else_label}"
                 )
             else:
                 output_lines.append(
-                    "br i1 %"
-                    + mem_id
-                    + ", label %l"
-                    + then_label
-                    + ", label %l"
-                    + else_label
+                    f"br i1 %{mem_id}, label %l{then_label}, label %l{else_label}"
                 )
-            output_lines.append("l" + then_label + ":")
+            output_lines.append(f"l{then_label}:")
             output_lines.append(
                 "call i32(i8*, ...) @printf(i8* bitcast([5 x i8]* @True   to i8 *), i32 5)"
             )
             ProgramMemory.mem_counter += 1
-            output_lines.append("br label %l" + end_label)
-            output_lines.append("l" + else_label + ":")
+            output_lines.append(f"br label %l{end_label}")
+            output_lines.append(f"l{else_label}:")
             output_lines.append(
                 "call i32(i8*, ...) @printf(i8* bitcast([6 x i8]* @False   to i8 *), i32 5)"
             )
             ProgramMemory.MemCounter += 1
-            output_lines.append("	br label %l" + end_label)
-            output_lines.append("l" + end_label + ":")
+            output_lines.append(f"br label %l{end_label}")
+            output_lines.append(f"l{end_label}:")
         if type == Types.String:
             pass  # TODO implement string printing
         return 0
@@ -517,16 +479,12 @@ class Read(Instruction):
         type, _, ident_id = ProgramMemory.variables_dict[self.left.name]
         if type == Types.Int:
             output_lines.append(
-                "call i32 (i8*, ...) @scanf(i8* bitcast ([3 x i8]* @int to i8*), i32* %"
-                + ident_id
-                + ")"
+                f"call i32 (i8*, ...) @scanf(i8* bitcast ([3 x i8]* @int to i8*), i32* %{ident_id})"
             )
             ProgramMemory.mem_counter += 1
         if type == Types.Float:
             output_lines.append(
-                "call i32 (i8*, ...) @scanf(i8* bitcast ([4 x i8]* @double to i8*), double* %"
-                + ident_id
-                + ")"
+                f"call i32 (i8*, ...) @scanf(i8* bitcast ([4 x i8]* @double to i8*), double* %{ident_id})"
             )
             ProgramMemory.mem_counter += 1
         return 0
