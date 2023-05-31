@@ -13,6 +13,7 @@ from nodes import (
     Write,
     Read,
     StringValue,
+    UnOp,
 )
 
 tokens = (
@@ -39,6 +40,10 @@ tokens = (
     "READ",
     "STRING",
     "STRING_VALUE",
+    "NEG",
+    "AND",
+    "OR",
+    "XOR",
 )
 
 
@@ -51,6 +56,7 @@ t_LPAREN = r"\("
 t_RPAREN = r"\)"
 t_SEMICOLON = r";"
 t_ASSIGNMENT = r"="
+t_NEG = r"!"
 
 reserved = {
     "if": "IF",
@@ -64,6 +70,9 @@ reserved = {
     "write": "WRITE",
     "read": "READ",
     "string": "STRING",
+    "and": "AND",
+    "or": "OR",
+    "xor": "XOR",
 }
 
 precedence = (
@@ -73,7 +82,7 @@ precedence = (
 
 
 def t_STRING_VALUE(t):
-    r"\"([^\"]*)\""
+    r"\"([^\"]*)\" "
     t.value = t.value.strip('"')
     return t
 
@@ -153,9 +162,12 @@ def p_instruction_assignment_exp(p):
     node = Assign(p.lineno(1), Variable(p.lineno(2), p[1]), p[3])
     p[0] = node
 
+
 def p_instruction_assignment_string(p):
     """instruction : ID ASSIGNMENT STRING_VALUE SEMICOLON"""
-    node = Assign(p.lineno(1), Variable(p.lineno(2), p[1]), StringValue(p.lineno(3), p[3]))
+    node = Assign(
+        p.lineno(1), Variable(p.lineno(2), p[1]), StringValue(p.lineno(3), p[3])
+    )
     p[0] = node
 
 
@@ -163,9 +175,17 @@ def p_expression_binop(p):
     """expression : expression PLUS expression
     | expression MINUS expression
     | expression TIMES expression
-    | expression DIVIDE expression"""
+    | expression DIVIDE expression
+    | expression AND expression
+    | expression OR expression
+    | expression XOR expression"""
 
     p[0] = BinOp(p.lineno(2), p[1], p[2], p[3])
+
+
+def p_expression_unop(p):
+    "expression : NEG expression"
+    p[0] = UnOp(p.lineno(1), p[2], p[1])
 
 
 def p_expression_groupop(p):
@@ -289,7 +309,10 @@ lexer = lex.lex()
 
 # testing
 data = """
-3 / (4. + 10) + 5 - 3;\n int num, num2, num4; \n float tuto, tiki, tson; \n tuto = 6. /2;\n write(2 + 3); read(tuto);\n num = true;
+bool num;
+num = !true;
+6 or false;
+
 """
 
 

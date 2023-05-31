@@ -62,24 +62,70 @@ class BinOp(Instruction):
                 return self.__handle_arithmetic_operator(
                     "Dividing", left_type, right_type
                 )
+            case "or":
+                return self.__handle_logical_operator(
+                    "Logical OR", left_type, right_type
+                )
+            case "and":
+                return self.__handle_logical_operator(
+                    "Logical AND", left_type, right_type
+                )
+            case "xor":
+                return self.__handle_logical_operator(
+                    "Logical XOR", left_type, right_type
+                )
 
     def __handle_arithmetic_operator(self, operation_name, left_type, right_type):
-        if left_type == Types.Bool or right_type == Types.Bool:
+        if left_type in [Types.Bool, Types.String]:
             print(
-                f"ERROR: {operation_name} bool type is not allowed (line: {self.line_no}) "
+                f"ERROR: {left_type.value} on the left side of {operation_name} is not allowed (line: {self.line_no})"
             )
             return (1, "")
-        if left_type == Types.String or right_type == Types.String:
+        if right_type in [Types.Bool, Types.String]:
             print(
-                f"ERROR: {operation_name} string type is not allowed (line: {self.line_no}) "
+                f"ERROR: {left_type.value} on the right side of {operation_name} is not allowed (line: {self.line_no})"
             )
             return (1, "")
         if left_type == right_type == Types.Int:
             return (0, Types.Int)
         return (0, Types.Float)
 
+    def __handle_logical_operator(self, operation_name, left_type, right_type):
+        if left_type in [Types.Float, Types.Int, Types.String]:
+            print(
+                f"ERROR: {left_type.value} on the left side of {operation_name} is not allowed (line: {self.line_no})"
+            )
+            return (1, "")
+        if right_type in [Types.Float, Types.Int, Types.String]:
+            print(
+                f"ERROR: {left_type.value} on the right side of {operation_name} is not allowed (line: {self.line_no})"
+            )
+            return (1, "")
+        return (0, Types.Bool)
+
     def __str__(self, indent_level=0):
         return super().__str__(indent_level, f"({self.op})")
+
+
+class UnOp(Instruction):
+    def __init__(self, line_no, left, op) -> None:
+        super().__init__(line_no, left)
+        self.type = "unop"
+        self.op = op
+
+    def __str__(self, indent_level=0):
+        return super().__str__(indent_level, f"({self.op})")
+
+    def check_semantics(self, variables_dict):
+        left_semantic_check, left_type = self.left.check_semantics(variables_dict)
+        if left_semantic_check != 0:
+            return (1, "")
+        if left_type != Types.Bool:
+            print(
+                "ERROR: Negation is only allowed for bool type (line: {self.line_no})"
+            )
+        else:
+            return (0, Types.Bool)
 
 
 class Instructions(Node):
@@ -197,7 +243,7 @@ class Write(Instruction):
         if left_semantic_check != 0:
             return (1, "")
         return (0, id_type)
-    
+
 
 class Read(Instruction):
     def __init__(self, line_no, value) -> None:
@@ -210,7 +256,9 @@ class Read(Instruction):
             return (1, "")
         id_type = variables_dict[self.left.name]
         if id_type == Types.Bool:
-            print(f"ERROR: Reading to bool variable is not allowed (line: {self.line_no}) ")
+            print(
+                f"ERROR: Reading to bool variable is not allowed (line: {self.line_no}) "
+            )
             return (1, "")
         return (0, id_type)
 
@@ -234,7 +282,6 @@ class AST:
                 left_node = node.left
                 while left_node:
                     if left_node.name in variables_dict:
-                        # TODO LINE NUMBER
                         print(
                             f"ERROR: Variable already defined, (line: {left_node.line_no})"
                         )
