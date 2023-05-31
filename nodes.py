@@ -5,6 +5,7 @@ class Types(Enum):
     Int = "int"
     Float = "float"
     Bool = "bool"
+    String = "string"
 
 
 class Node:
@@ -66,6 +67,11 @@ class BinOp(Instruction):
         if left_type == Types.Bool or right_type == Types.Bool:
             print(
                 f"ERROR: {operation_name} bool type is not allowed (line: {self.line_no}) "
+            )
+            return (1, "")
+        if left_type == Types.String or right_type == Types.String:
+            print(
+                f"ERROR: {operation_name} string type is not allowed (line: {self.line_no}) "
             )
             return (1, "")
         if left_type == right_type == Types.Int:
@@ -207,7 +213,12 @@ class Read(Instruction):
             print(f"ERROR: Reading to bool variable is not allowed (line: {self.line_no}) ")
             return (1, "")
         return (0, id_type)
-    
+
+
+class StringValue(Value):
+    def __init__(self, line_no, value):
+        super().__init__(line_no, value, Types.String)
+
 
 class AST:
     def __init__(self, root: Instructions) -> None:
