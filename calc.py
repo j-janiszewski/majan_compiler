@@ -10,6 +10,8 @@ from nodes import (
     Init,
     BoolValue,
     Assign,
+    Write,
+    Read,
     StringValue,
 )
 
@@ -33,6 +35,8 @@ tokens = (
     "BOOL",
     "LPAREN",
     "RPAREN",
+    "WRITE",
+    "READ",
     "STRING",
     "STRING_VALUE",
 )
@@ -57,6 +61,8 @@ reserved = {
     "bool": "BOOL",
     "true": "BOOL_VALUE",
     "false": "BOOL_VALUE",
+    "write": "WRITE",
+    "read": "READ",
     "string": "STRING",
 }
 
@@ -136,7 +142,9 @@ def p_lines_list(p):
 
 def p_instruction(p):
     """instruction : expression SEMICOLON
-    | init SEMICOLON"""
+    | init SEMICOLON
+    | write SEMICOLON
+    | read SEMICOLON"""
     p[0] = p[1]
 
 
@@ -240,6 +248,16 @@ def p_bool_ids(p):
     node = Variable(p.lineno(3), p[3], Types.Bool)
     node.left = p[1]
     p[0] = node
+
+
+def p_expression_write(p):
+    "write : WRITE LPAREN expression RPAREN"
+    p[0] = Write(p.lineno(3), p[3])
+
+
+def p_expression_read(p):
+    "read : READ LPAREN ID RPAREN"
+    p[0] = Read(p.lineno(3), Variable(p.lineno(3), p[3]))
 
 
 def p_expression_string_vars_init(p):
