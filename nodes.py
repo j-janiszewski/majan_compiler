@@ -133,16 +133,12 @@ class BinOp(Instruction):
 
             operation = ""
             if self.op == "+":
-                print(f"OPERATION: {self.op}")
                 operation = "add "
             elif self.op == "-":
-                print(f"OPERATION: {self.op}")
                 operation = "sub "
             elif self.op == "*":
-                print(f"OPERATION: {self.op}")
                 operation = "mul "
             elif self.op == "/":
-                print(f"OPERATION: {self.op}")
                 operation = "div "
 
             if left_val != "" and right_val != "":
@@ -227,27 +223,43 @@ class Assign(Instruction):
         right_type, right_mem_id, right_value = self.right.write_code(output_lines)    
         if var_type is Types.Int:
             if right_value != "":
-                output_lines.append(f"  store i32 {right_value}, i32* %{var_mem_id}, align 4")
+                output_lines.append(
+                    f"  store i32 {right_value}, i32* %{var_mem_id}, align 4"
+                )
             else:
-                output_lines.append(f"  store i32 %{right_mem_id}, i32* %{var_mem_id}, align 4")
+                output_lines.append(
+                    f"  store i32 %{right_mem_id}, i32* %{var_mem_id}, align 4"
+                )
         if var_type is Types.Float:
             if right_type is Types.Int:
                 if right_value != "":
-                    output_lines.append(f"  %{ProgramMemory.mem_counter} = sitofp i32 {right_value} to float")
+                    output_lines.append(
+                        f"  %{ProgramMemory.mem_counter} = sitofp i32 {right_value} to float"
+                    )
                     right_value = ""
                 else:
-                    output_lines.append(f"  %{ProgramMemory.mem_counter} = sitofp i32 %{right_mem_id} to float")
+                    output_lines.append(
+                        f"  %{ProgramMemory.mem_counter} = sitofp i32 %{right_mem_id} to float"
+                    )
                 right_mem_id = ProgramMemory.mem_counter
                 ProgramMemory.mem_counter += 1
             if right_value != "":
-                output_lines.append(f"  store float {right_value}, float* %{var_mem_id}, align 4")
+                output_lines.append(
+                    f"  store float {right_value}, float* %{var_mem_id}, align 4"
+                )
             else:
-                output_lines.append(f"  store float %{right_mem_id}, float* %{var_mem_id}, align 4")
+                output_lines.append(
+                    f"  store float %{right_mem_id}, float* %{var_mem_id}, align 4"
+                )
         if var_type is Types.Bool:
             if right_value != "":
-                output_lines.append(f"  store i1 {right_value}, i1* %{var_mem_id}")
+                output_lines.append(
+                    f"  store i1 {right_value}, i1* %{var_mem_id}"
+                )
             else:
-                output_lines.append(f"  store i1 %{right_mem_id}, i1* %{var_mem_id}")
+                output_lines.append(
+                    f"  store i1 %{right_mem_id}, i1* %{var_mem_id}"
+                )
         return var_type, var_mem_id, ""
 
 class Variable(Node):
@@ -270,7 +282,9 @@ class Variable(Node):
 
     def write_init_code(self, output_lines):
         if self.variable_type is Types.Int:
-            output_lines.append(f"  %{ProgramMemory.mem_counter} = alloca i32, align 4")
+            output_lines.append(
+                f"  %{ProgramMemory.mem_counter} = alloca i32, align 4"
+            )
             ProgramMemory.mem_counter += 1
         elif self.variable_type is Types.Float:
             output_lines.append(
@@ -278,7 +292,9 @@ class Variable(Node):
             )
             ProgramMemory.mem_counter += 1
         elif self.variable_type is Types.Bool:
-            output_lines.append(f"  %{ProgramMemory.mem_counter} = alloca i1")
+            output_lines.append(
+                f"  %{ProgramMemory.mem_counter} = alloca i1"
+            )
             ProgramMemory.mem_counter += 1
         return
 
@@ -436,8 +452,7 @@ class AST:
         output_lines.append(f"}}")
         join_and_write_to_file_ll(filename, output_lines)
 
-        print("Program memory:\n")
-        print(ProgramMemory.variables_dict)
+        print(f"Program memory: {ProgramMemory.variables_dict}")
         return
 
 
