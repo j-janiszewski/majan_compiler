@@ -378,7 +378,7 @@ class AST:
                     variables_dict[next.name] = (var_type, 0, ProgramMemory.mem_counter)
                     next.write_init_code(output_lines)
                     next = next.left
-            elif isinstance(node, Expression):
+            elif isinstance(node, Instruction):
                 node.write_code(output_lines)
             elif isinstance(node, Instructions):
                 print("Instructions instance") #TODO to implement
