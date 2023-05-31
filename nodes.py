@@ -214,10 +214,12 @@ class BinOp(Instruction):
                 else:
                     output_lines.append(f"%{ProgramMemory.mem_counter} = phi i1[0, %l{first_case_label}],[%{right_mem_id},%l{label_go_to_end}]")
             if self.op =="or":
-                pass
+                pass # TODO implement it
+            if self.op =="xor":
+                pass # TODO implement it
             ProgramMemory.mem_counter+=1
             return Types.Bool, ProgramMemory.mem_counter-1,""
-        return None, -1, "TODO"  # TODO other operations 
+        
 
 
 class UnOp(Instruction):
