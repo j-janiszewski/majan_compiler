@@ -289,8 +289,10 @@ lexer = lex.lex()
 
 # testing
 data = """
-int a;
-a / 2 - 1 * 3;
+float a;
+a = 2 + 2 * 2;
+bool ispies;
+ispies = false;
 """
 
 

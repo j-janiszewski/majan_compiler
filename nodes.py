@@ -92,9 +92,6 @@ class BinOp(Instruction):
         if self.op in ["+", "-", "*", "/"]:
             left_type, left_mem_id, left_val = self.left.write_code(output_lines)
             right_type, right_mem_id, right_val = self.right.write_code(output_lines)
-            if isinstance(self.left, Assign):
-                print(f"BinOp -> Assign TODO")  #TODO Assign
-
             if left_type != right_type:
                 return_type = Types.Float
                 if left_type is Types.Int:
@@ -207,7 +204,34 @@ class Assign(Instruction):
 
     def __str__(self, indent_level=0):
         return super().__str__(indent_level)
-
+    
+    def write_code(self, output_lines):
+        var_type, var_value, var_mem_id = ProgramMemory.variables_dict[self.left.name]
+        right_type, right_mem_id, right_value = self.right.write_code(output_lines)    
+        if var_type is Types.Int:
+            if right_value != "":
+                output_lines.append(f"  store i32 {right_value}, i32* %{var_mem_id}, align 4")
+            else:
+                output_lines.append(f"  store i32 %{right_mem_id}, i32* %{var_mem_id}, align 4")
+        if var_type is Types.Float:
+            if right_type is Types.Int:
+                if right_value != "":
+                    output_lines.append(f"  %{ProgramMemory.mem_counter} = sitofp i32 {right_value} to float")
+                    right_value = ""
+                else:
+                    output_lines.append(f"  %{ProgramMemory.mem_counter} = sitofp i32 %{right_mem_id} to float")
+                right_mem_id = ProgramMemory.mem_counter
+                ProgramMemory.mem_counter += 1
+            if right_value != "":
+                output_lines.append(f"  store float {right_value}, float* %{var_mem_id}, align 4")
+            else:
+                output_lines.append(f"  store float %{right_mem_id}, float* %{var_mem_id}, align 4")
+        if var_type is Types.Bool:
+            if right_value != "":
+                output_lines.append(f"  store i1 {right_value}, i1* %{var_mem_id}")
+            else:
+                output_lines.append(f"  store i1 %{right_mem_id}, i1* %{var_mem_id}")
+        return var_type, var_mem_id, ""
 
 class Variable(Node):
     def __init__(self, line_no, name, variable_type=None) -> None:
@@ -240,7 +264,6 @@ class Variable(Node):
         return
     
     def write_code(self, output_lines):
-        #TODO dopisać
         var_type, var_value, var_mem_id = ProgramMemory.variables_dict[self.name]
         if var_type is Types.Int:
             output_lines.append(f"  %{ProgramMemory.mem_counter} = load i32, i32* %{var_mem_id}, align 4")
@@ -271,7 +294,7 @@ class Value(Node):
         )
 
     def write_code(self, output_lines):
-        return self.value_type, -1, self.value #TODO check
+        return self.value_type, -1, self.value
 
 
 class IntValue(Value):
@@ -349,9 +372,7 @@ class AST:
                     return 1
                 
     def create_llvm_output(self, filename):
-        variables_dict = dict() #TODO check if ProgramMemory works correctly
         output_lines = []
-        initiation_section = True
         #TODO Check if everything below is needed
         output_lines.append(f"@int = constant [ 3 x i8] c\"%d\\00\"")
         output_lines.append(f"@double = constant [ 4 x i8] c\"%lf\\00\"")
@@ -368,14 +389,11 @@ class AST:
             join_and_write_to_file_ll(filename, output_lines)
             return
         for node in self.root.instructions:
-            if not isinstance(node, Init):
-                ProgramMemory.variables_dict = variables_dict
-                initiation_section = False
             if isinstance(node, Init):
                 var_type = node.variable_type
                 next = node.left
                 while next:
-                    variables_dict[next.name] = (var_type, 0, ProgramMemory.mem_counter)
+                    ProgramMemory.variables_dict[next.name] = (var_type, 0, ProgramMemory.mem_counter)
                     next.write_init_code(output_lines)
                     next = next.left
             elif isinstance(node, Instruction):
