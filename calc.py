@@ -313,6 +313,8 @@ int a;
 int b;
 a / 2 - 1 * 3;
 write(a / 2 - 1 * 3);
+read(b);
+read + 5
 """
 
 
