@@ -328,3 +328,5 @@ from nodes import AST
 ast = AST(result)
 
 ast.check_semantic_errors()
+
+ast.create_llvm_output("ispies")

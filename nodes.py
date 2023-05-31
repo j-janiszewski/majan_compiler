@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class PromgramMemory(object):
+class ProgramMemory(object):
     string_count = 0
     mem_counter = 1
     labels_count = 1
@@ -112,6 +112,71 @@ class BinOp(Instruction):
 
     def __str__(self, indent_level=0):
         return super().__str__(indent_level, f"({self.op})")
+    
+    def write_code(self, output_lines):
+        if self.op in ["+", "-", "*", "/"]:
+            left_type, left_mem_id, left_val = self.left.write_code(output_lines)
+            right_type, right_mem_id, right_val = self.right.write_code(output_lines)
+            if isinstance(self.left, Assign):
+                print(f"BinOp -> Assign TODO")  #TODO Assign
+
+            if left_type != right_type:
+                return_type = Types.Float
+                if left_type is Types.Int:
+                    if left_val != "":
+                        output_lines.append(f"  %{ProgramMemory.mem_counter} = sitofp i32 {left_val} to float")
+                    else:
+                        output_lines.append(f"  %{ProgramMemory.mem_counter} = sitofp i32 %{left_mem_id} to float")
+                    left_val = ""
+                    left_mem_id = ProgramMemory.mem_counter
+                    ProgramMemory.mem_counter += 1
+                else:
+                    if right_val != "":
+                        output_lines.append(f"  %{ProgramMemory.mem_counter} = sitofp i32 {right_val} to float")
+                    else:
+                        output_lines.append(f"  %{ProgramMemory.mem_counter} = sitofp i32 %{right_mem_id} to float")
+                    right_val = ""
+                    right_mem_id = ProgramMemory.mem_counter
+                    ProgramMemory.mem_counter += 1
+            else:
+                return_type = left_type
+
+            if left_type is Types.Int and right_type is Types.Int:
+                result_type = "i32"
+                prefix = ""
+            else:
+                result_type = "float"
+                prefix = "f"
+            if result_type == "i32" and self.op == "/":
+                prefix = "u"
+
+            operation = ""
+            if self.op == '+':
+                print(f"OPERATION: {self.op}")
+                operation = "add "
+            elif self.op == '-':
+                print(f"OPERATION: {self.op}")
+                operation = "sub "
+            elif self.op == '*':
+                print(f"OPERATION: {self.op}")
+                operation = "mul "
+            elif self.op == '/':
+                print(f"OPERATION: {self.op}")
+                operation = "div "
+
+            if left_val != "" and right_val != "":
+                output_lines.append(f"  %{ProgramMemory.mem_counter} = {prefix}{operation} {result_type} {left_val}, {right_val}")
+            elif left_val != "":
+                output_lines.append(f"  %{ProgramMemory.mem_counter} = {prefix}{operation} {result_type} {left_val}, %{right_mem_id}")
+            elif right_val != "":
+                output_lines.append(f"  %{ProgramMemory.mem_counter} = {prefix}{operation} {result_type} %{left_mem_id}, {right_val}")
+            else:
+                output_lines.append(f"  %{ProgramMemory.mem_counter} = {prefix}{operation} {result_type} %{left_mem_id}, %{right_mem_id}")
+
+            ProgramMemory.mem_counter += 1
+            return return_type, ProgramMemory.mem_counter - 1, ""
+
+        return None, -1, "TODO" #TODO other operations
 
 
 class UnOp(Instruction):
@@ -207,6 +272,33 @@ class Variable(Node):
         return super().__str__(
             indent_level, f"(name={self.name}, type={self.variable_type})"
         )
+    
+    def write_init_code(self, output_lines):
+        if self.variable_type is Types.Int:
+            output_lines.append(f"  %{ProgramMemory.mem_counter} = alloca i32, align 4")
+            ProgramMemory.mem_counter += 1
+        elif self.variable_type is Types.Float:
+            output_lines.append(f"  %{ProgramMemory.mem_counter} = alloca float, align 4")
+            ProgramMemory.mem_counter += 1
+        elif self.variable_type is Types.Bool:
+            output_lines.append(f"  %{ProgramMemory.mem_counter} = alloca i1")
+            ProgramMemory.mem_counter += 1
+        return
+    
+    def write_code(self, output_lines):
+        #TODO dopisać
+        var_type, var_value, var_mem_id = ProgramMemory.variables_dict[self.name]
+        if var_type is Types.Int:
+            output_lines.append(f"  %{ProgramMemory.mem_counter} = load i32, i32* %{var_mem_id}, align 4")
+            ProgramMemory.mem_counter += 1
+        elif var_type is Types.Float:
+            output_lines.append(f"  %{ProgramMemory.mem_counter} = load float, float* %{var_mem_id}, align 4")
+            ProgramMemory.mem_counter += 1
+        elif var_type is Types.Bool:
+            output_lines.append(f"  %{ProgramMemory.mem_counter} = load i1, i1* %{var_mem_id}")
+            ProgramMemory.mem_counter += 1
+        return var_type, ProgramMemory.mem_counter - 1, ""
+    
 
 
 class Value(Node):
@@ -223,6 +315,9 @@ class Value(Node):
         return super().__str__(
             indent_level, f"(value: {self.value}, value_type: {self.value_type})"
         )
+
+    def write_code(self, output_lines):
+        return self.value_type, -1, self.value #TODO check
 
 
 class IntValue(Value):
@@ -301,8 +396,10 @@ class AST:
                     return 1
                 
     def create_llvm_output(self, filename):
-        variablesDict = dict()
+        variables_dict = dict() #TODO check if ProgramMemory works correctly
         output_lines = []
+        initiation_section = True
+        #TODO Check if everything below is needed
         output_lines.append(f"@int = constant [ 3 x i8] c\"%d\\00\"")
         output_lines.append(f"@double = constant [ 4 x i8] c\"%lf\\00\"")
         output_lines.append(f"@True = constant [5 x i8 ] c\"True\\00\"")
@@ -311,14 +408,34 @@ class AST:
         output_lines.append(f"declare i32 @printf(i8*, ...)")
         output_lines.append(f"declare i32 @scanf(i8*, ...)")
         output_lines.append(f"")
-        #output_lines += f"" #header text
-        output_lines.append(f"define dso_local i32 @main() #0 {{")   #do we really need dso_local param?
+        output_lines.append(f"define dso_local i32 @main() #0 {{")   #TODO do we really need dso_local param?
         if self.root == None:
-            output_lines.append(f"ret i32 0")
+            output_lines.append(f"  ret i32 0")
             output_lines.append(f"}}")
             join_and_write_to_file_ll(filename, output_lines)
             return
-        print("ERROR WRITE")
+        for node in self.root.instructions:
+            if not isinstance(node, Init):
+                ProgramMemory.variables_dict = variables_dict
+                initiation_section = False
+            if isinstance(node, Init):
+                var_type = node.variable_type
+                next = node.left
+                while next:
+                    variables_dict[next.name] = (var_type, 0, ProgramMemory.mem_counter)
+                    next.write_init_code(output_lines)
+                    next = next.left
+            elif isinstance(node, Expression):
+                node.write_code(output_lines)
+            elif isinstance(node, Instructions):
+                print("Instructions instance") #TODO to implement
+
+        output_lines.append(f"  ret i32 0")
+        output_lines.append(f"}}")
+        join_and_write_to_file_ll(filename, output_lines)
+
+        print("Program memory:\n")
+        print(ProgramMemory.variables_dict)
         return
 
 
