@@ -1,6 +1,13 @@
 from enum import Enum
 
 
+class ProgramMemory(object):
+    string_count = 0
+    mem_counter = 1
+    labels_count = 1
+    variables_dict = dict()
+
+
 class Types(Enum):
     Int = "int"
     Float = "float"
@@ -81,6 +88,85 @@ class BinOp(Instruction):
     def __str__(self, indent_level=0):
         return super().__str__(indent_level, f"({self.op})")
 
+    def write_code(self, output_lines):
+        if self.op in ["+", "-", "*", "/"]:
+            left_type, left_mem_id, left_val = self.left.write_code(output_lines)
+            right_type, right_mem_id, right_val = self.right.write_code(output_lines)
+
+            if left_type != right_type:
+                return_type = Types.Float
+                if left_type is Types.Int:
+                    if left_val != "":
+                        output_lines.append(
+                            f"  %{ProgramMemory.mem_counter} = sitofp i32 {left_val} to float"
+                        )
+                    else:
+                        output_lines.append(
+                            f"  %{ProgramMemory.mem_counter} = sitofp i32 %{left_mem_id} to float"
+                        )
+                    left_val = ""
+                    left_mem_id = ProgramMemory.mem_counter
+                    ProgramMemory.mem_counter += 1
+                else:
+                    if right_val != "":
+                        output_lines.append(
+                            f"  %{ProgramMemory.mem_counter} = sitofp i32 {right_val} to float"
+                        )
+                    else:
+                        output_lines.append(
+                            f"  %{ProgramMemory.mem_counter} = sitofp i32 %{right_mem_id} to float"
+                        )
+                    right_val = ""
+                    right_mem_id = ProgramMemory.mem_counter
+                    ProgramMemory.mem_counter += 1
+            else:
+                return_type = left_type
+
+            if left_type is Types.Int and right_type is Types.Int:
+                result_type = "i32"
+                prefix = ""
+            else:
+                result_type = "float"
+                prefix = "f"
+            if result_type == "i32" and self.op == "/":
+                prefix = "u"
+
+            operation = ""
+            if self.op == "+":
+                print(f"OPERATION: {self.op}")
+                operation = "add "
+            elif self.op == "-":
+                print(f"OPERATION: {self.op}")
+                operation = "sub "
+            elif self.op == "*":
+                print(f"OPERATION: {self.op}")
+                operation = "mul "
+            elif self.op == "/":
+                print(f"OPERATION: {self.op}")
+                operation = "div "
+
+            if left_val != "" and right_val != "":
+                output_lines.append(
+                    f"  %{ProgramMemory.mem_counter} = {prefix}{operation} {result_type} {left_val}, {right_val}"
+                )
+            elif left_val != "":
+                output_lines.append(
+                    f"  %{ProgramMemory.mem_counter} = {prefix}{operation} {result_type} {left_val}, %{right_mem_id}"
+                )
+            elif right_val != "":
+                output_lines.append(
+                    f"  %{ProgramMemory.mem_counter} = {prefix}{operation} {result_type} %{left_mem_id}, {right_val}"
+                )
+            else:
+                output_lines.append(
+                    f"  %{ProgramMemory.mem_counter} = {prefix}{operation} {result_type} %{left_mem_id}, %{right_mem_id}"
+                )
+
+            ProgramMemory.mem_counter += 1
+            return return_type, ProgramMemory.mem_counter - 1, ""
+
+        return None, -1, "TODO"  # TODO other operations
+
 
 class Instructions(Node):
     def __init__(self, line_no, instructions_node=None) -> None:
@@ -155,6 +241,39 @@ class Variable(Node):
             indent_level, f"(name={self.name}, type={self.variable_type})"
         )
 
+    def write_init_code(self, output_lines):
+        if self.variable_type is Types.Int:
+            output_lines.append(f"  %{ProgramMemory.mem_counter} = alloca i32, align 4")
+            ProgramMemory.mem_counter += 1
+        elif self.variable_type is Types.Float:
+            output_lines.append(
+                f"  %{ProgramMemory.mem_counter} = alloca float, align 4"
+            )
+            ProgramMemory.mem_counter += 1
+        elif self.variable_type is Types.Bool:
+            output_lines.append(f"  %{ProgramMemory.mem_counter} = alloca i1")
+            ProgramMemory.mem_counter += 1
+        return
+
+    def write_code(self, output_lines):
+        var_type, var_value, var_mem_id = ProgramMemory.variables_dict[self.name]
+        if var_type is Types.Int:
+            output_lines.append(
+                f"  %{ProgramMemory.mem_counter} = load i32, i32* %{var_mem_id}, align 4"
+            )
+            ProgramMemory.mem_counter += 1
+        elif var_type is Types.Float:
+            output_lines.append(
+                f"  %{ProgramMemory.mem_counter} = load float, float* %{var_mem_id}, align 4"
+            )
+            ProgramMemory.mem_counter += 1
+        elif var_type is Types.Bool:
+            output_lines.append(
+                f"  %{ProgramMemory.mem_counter} = load i1, i1* %{var_mem_id}"
+            )
+            ProgramMemory.mem_counter += 1
+        return var_type, ProgramMemory.mem_counter - 1, ""
+
 
 class Value(Node):
     def __init__(self, line_no, value, value_type) -> None:
@@ -170,6 +289,9 @@ class Value(Node):
         return super().__str__(
             indent_level, f"(value: {self.value}, value_type: {self.value_type})"
         )
+
+    def write_code(self, output_lines):
+        return self.value_type, -1, self.value
 
 
 class IntValue(Value):
@@ -197,7 +319,7 @@ class Write(Instruction):
         if left_semantic_check != 0:
             return (1, "")
         return (0, id_type)
-    
+
 
 class Read(Instruction):
     def __init__(self, line_no, value) -> None:
@@ -210,7 +332,9 @@ class Read(Instruction):
             return (1, "")
         id_type = variables_dict[self.left.name]
         if id_type == Types.Bool:
-            print(f"ERROR: Reading to bool variable is not allowed (line: {self.line_no}) ")
+            print(
+                f"ERROR: Reading to bool variable is not allowed (line: {self.line_no}) "
+            )
             return (1, "")
         return (0, id_type)
 
@@ -234,7 +358,6 @@ class AST:
                 left_node = node.left
                 while left_node:
                     if left_node.name in variables_dict:
-                        # TODO LINE NUMBER
                         print(
                             f"ERROR: Variable already defined, (line: {left_node.line_no})"
                         )
@@ -245,3 +368,53 @@ class AST:
                 semantic_check, _ = node.check_semantics(variables_dict)
                 if semantic_check != 0:
                     return 1
+
+    def create_llvm_output(self, filename):
+        output_lines = []
+        # TODO Check if everything below is needed
+        output_lines.append(f'@int = constant [ 3 x i8] c"%d\\00"')
+        output_lines.append(f'@double = constant [ 4 x i8] c"%lf\\00"')
+        output_lines.append(f'@True = constant [5 x i8 ] c"True\\00"')
+        output_lines.append(f'@False = constant [6 x i8 ] c"False\\00"')
+        output_lines.append(f"")
+        output_lines.append(f"declare i32 @printf(i8*, ...)")
+        output_lines.append(f"declare i32 @scanf(i8*, ...)")
+        output_lines.append(f"")
+        output_lines.append(
+            f"define dso_local i32 @main() #0 {{"
+        )  # TODO do we really need dso_local param?
+        if self.root == None:
+            output_lines.append(f"  ret i32 0")
+            output_lines.append(f"}}")
+            join_and_write_to_file_ll(filename, output_lines)
+            return
+        for node in self.root.instructions:
+            if isinstance(node, Init):
+                var_type = node.variable_type
+                next = node.left
+                while next:
+                    ProgramMemory.variables_dict[next.name] = (
+                        var_type,
+                        0,
+                        ProgramMemory.mem_counter,
+                    )
+                    next.write_init_code(output_lines)
+                    next = next.left
+            elif isinstance(node, Instruction):
+                node.write_code(output_lines)
+            elif isinstance(node, Instructions):
+                print("Instructions instance")  # TODO to implement
+
+        output_lines.append(f"  ret i32 0")
+        output_lines.append(f"}}")
+        join_and_write_to_file_ll(filename, output_lines)
+
+        print("Program memory:\n")
+        print(ProgramMemory.variables_dict)
+        return
+
+
+def join_and_write_to_file_ll(filename, data_lines):
+    data = "\n".join(data_lines)
+    with open(filename + ".ll", "w") as file:
+        file.write(data)

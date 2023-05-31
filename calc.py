@@ -289,7 +289,8 @@ lexer = lex.lex()
 
 # testing
 data = """
-3 / (4. + 10) + 5 - 3;\n int num, num2, num4; \n float tuto, tiki, tson; \n tuto = 6. /2;\n write(2 + 3); read(tuto);\n num = true;
+int a;
+a / 2 - 1 * 3;
 """
 
 
@@ -305,3 +306,5 @@ from nodes import AST
 ast = AST(result)
 
 ast.check_semantic_errors()
+
+ast.create_llvm_output("ispies")
