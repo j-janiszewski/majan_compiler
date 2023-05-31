@@ -1,6 +1,13 @@
 from enum import Enum
 
 
+class PromgramMemory(object):
+    string_count = 0
+    mem_counter = 1
+    labels_count = 1
+    variables_dict = dict()
+
+
 class Types(Enum):
     Int = "int"
     Float = "float"
@@ -206,3 +213,32 @@ class AST:
                 semantic_check, _ = node.check_semantics(variables_dict)
                 if semantic_check != 0:
                     return 1
+                
+    def create_llvm_output(self, filename):
+        variablesDict = dict()
+        output_lines = []
+        output_lines.append(f"@int = constant [ 3 x i8] c\"%d\\00\"")
+        output_lines.append(f"@double = constant [ 4 x i8] c\"%lf\\00\"")
+        output_lines.append(f"@True = constant [5 x i8 ] c\"True\\00\"")
+        output_lines.append(f"@False = constant [6 x i8 ] c\"False\\00\"")
+        output_lines.append(f"")
+        output_lines.append(f"declare i32 @printf(i8*, ...)")
+        output_lines.append(f"declare i32 @scanf(i8*, ...)")
+        output_lines.append(f"")
+        #output_lines += f"" #header text
+        output_lines.append(f"define dso_local i32 @main() #0 {{")   #do we really need dso_local param?
+        if self.root == None:
+            output_lines.append(f"ret i32 0")
+            output_lines.append(f"}}")
+            join_and_write_to_file_ll(filename, output_lines)
+            return
+        print("ERROR WRITE")
+        return
+
+
+
+
+def join_and_write_to_file_ll(filename, data_lines):
+    data = '\n'.join(data_lines)
+    with open(filename+".ll", "w") as file:
+        file.write(data)
