@@ -191,7 +191,6 @@ class BinOp(Instruction):
             return return_type, ProgramMemory.mem_counter - 1, ""
         if self.op in ["and", "xor", "or"]:
             _, left_mem_id, left_val = self.left.write_code(output_lines)
-            _, right_mem_id, right_val = self.right.write_code(output_lines)
             first_case_label = ProgramMemory.labels_count
             second_case_label = ProgramMemory.labels_count+1
             end_label = ProgramMemory.labels_count+2
@@ -205,6 +204,7 @@ class BinOp(Instruction):
                 else:
                     output_lines.append(f"br i1 %{left_mem_id}, label %l{second_case_label}, label %l{end_label}")
                 output_lines.append(f"l{second_case_label}:")
+                _, right_mem_id, right_val = self.right.write_code(output_lines)
                 output_lines.append(f"br label %l{label_go_to_end}")
                 output_lines.append(f"l{label_go_to_end}:")
                 output_lines.append(f"br label %l{end_label}")
