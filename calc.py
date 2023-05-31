@@ -309,9 +309,12 @@ lexer = lex.lex()
 
 # testing
 data = """
+
 bool num;
 num = !true;
 6 or false;
+
+
 
 """
 
@@ -328,3 +331,5 @@ from nodes import AST
 ast = AST(result)
 
 ast.check_semantic_errors()
+
+ast.create_llvm_output("ispies")
