@@ -83,7 +83,7 @@ class BinOp(Instruction):
             return (1, "")
         if right_type in [Types.Bool, Types.String]:
             print(
-                f"ERROR: {left_type.value} on the right side of {operation_name} is not allowed (line: {self.line_no})"
+                f"ERROR: {right_type.value} on the right side of {operation_name} is not allowed (line: {self.line_no})"
             )
             return (1, "")
         if left_type == right_type == Types.Int:
@@ -98,7 +98,7 @@ class BinOp(Instruction):
             return (1, "")
         if right_type in [Types.Float, Types.Int, Types.String]:
             print(
-                f"ERROR: {left_type.value} on the right side of {operation_name} is not allowed (line: {self.line_no})"
+                f"ERROR: {right_type.value} on the right side of {operation_name} is not allowed (line: {self.line_no})"
             )
             return (1, "")
         return (0, Types.Bool)
@@ -124,6 +124,7 @@ class UnOp(Instruction):
             print(
                 "ERROR: Negation is only allowed for bool type (line: {self.line_no})"
             )
+            return (1, "")
         else:
             return (0, Types.Bool)
 
