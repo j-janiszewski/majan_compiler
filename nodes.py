@@ -28,11 +28,11 @@ class Node:
         return node_as_text
 
 
-class Expression(Node):
+class Instruction(Node):
     pass
 
 
-class BinOp(Expression):
+class BinOp(Instruction):
     def __init__(self, line_no, left, op, right):
         super().__init__(line_no, left, right)
         self.type = "binop"
@@ -111,7 +111,7 @@ class Init(Node):
         return super().__str__(indent_level, f"(type: {self.variable_type})")
 
 
-class Assign(Expression):
+class Assign(Instruction):
     def __init__(self, line_no, left, right) -> None:
         super().__init__(line_no, left, right)
         self.type = "assign node"
@@ -187,6 +187,34 @@ class BoolValue(Value):
         super().__init__(line_no, value, Types.Bool)
 
 
+class Write(Instruction):
+    def __init__(self, line_no, value) -> None:
+        super().__init__(line_no, value)
+        self.type = "write"
+
+    def check_semantics(self, variables_dict):
+        left_semantic_check, id_type = self.left.check_semantics(variables_dict)
+        if left_semantic_check != 0:
+            return (1, "")
+        return (0, id_type)
+    
+
+class Read(Instruction):
+    def __init__(self, line_no, value) -> None:
+        super().__init__(line_no, value)
+        self.type = "read"
+
+    def check_semantics(self, variables_dict):
+        if not self.left.name in variables_dict:
+            print(f"ERROR: Undeclared variable (line: {self.line_no}) ")
+            return (1, "")
+        id_type = variables_dict[self.left.name]
+        if id_type == Types.Bool:
+            print(f"ERROR: Reading to bool variable is not allowed (line: {self.line_no}) ")
+            return (1, "")
+        return (0, id_type)
+
+
 class StringValue(Value):
     def __init__(self, line_no, value):
         super().__init__(line_no, value, Types.String)
@@ -213,7 +241,7 @@ class AST:
                         return 1
                     variables_dict[left_node.name] = variable_type
                     left_node = left_node.left
-            elif isinstance(node, Expression):
+            elif isinstance(node, Instruction):
                 semantic_check, _ = node.check_semantics(variables_dict)
                 if semantic_check != 0:
                     return 1
