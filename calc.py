@@ -10,6 +10,7 @@ from nodes import (
     Init,
     BoolValue,
     Assign,
+    StringValue,
 )
 
 tokens = (
@@ -32,6 +33,8 @@ tokens = (
     "BOOL",
     "LPAREN",
     "RPAREN",
+    "STRING",
+    "STRING_VALUE",
 )
 
 
@@ -54,12 +57,19 @@ reserved = {
     "bool": "BOOL",
     "true": "BOOL_VALUE",
     "false": "BOOL_VALUE",
+    "string": "STRING",
 }
 
 precedence = (
     ("left", "PLUS", "MINUS"),
     ("left", "TIMES", "DIVIDE"),
 )
+
+
+def t_STRING_VALUE(t):
+    r"\"([^\"]*)\""
+    t.value = t.value.strip('"')
+    return t
 
 
 def t_ID(t):
@@ -112,7 +122,9 @@ def p_program(p):
 
 def p_lines_single_one(p):
     "lines : instruction"
-    p[0] = p[1]
+    node = Instructions(p.lineno(1))
+    node.instructions.insert(0, p[1])
+    p[0] = node
 
 
 def p_lines_list(p):
@@ -128,9 +140,14 @@ def p_instruction(p):
     p[0] = p[1]
 
 
-def p_instruction_assignment(p):
-    "instruction : ID ASSIGNMENT expression SEMICOLON"
+def p_instruction_assignment_exp(p):
+    """instruction : ID ASSIGNMENT expression SEMICOLON"""
     node = Assign(p.lineno(1), Variable(p.lineno(2), p[1]), p[3])
+    p[0] = node
+
+def p_instruction_assignment_string(p):
+    """instruction : ID ASSIGNMENT STRING_VALUE SEMICOLON"""
+    node = Assign(p.lineno(1), Variable(p.lineno(2), p[1]), StringValue(p.lineno(3), p[3]))
     p[0] = node
 
 
@@ -221,6 +238,25 @@ def p_bool_id_single(p):
 def p_bool_ids(p):
     """bool_ids : bool_ids COMMA ID"""
     node = Variable(p.lineno(3), p[3], Types.Bool)
+    node.left = p[1]
+    p[0] = node
+
+
+def p_expression_string_vars_init(p):
+    "init : STRING string_ids"
+    init_node = Init(p.lineno(1), Types.String)
+    init_node.left = p[2]
+    p[0] = init_node
+
+
+def p_string_id_single(p):
+    "string_ids : ID"
+    p[0] = Variable(p.lineno(1), p[1], Types.String)
+
+
+def p_string_ids(p):
+    """string_ids : string_ids COMMA ID"""
+    node = Variable(p.lineno(3), p[3], Types.String)
     node.left = p[1]
     p[0] = node
 

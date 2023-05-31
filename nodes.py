@@ -12,6 +12,7 @@ class Types(Enum):
     Int = "int"
     Float = "float"
     Bool = "bool"
+    String = "string"
 
 
 class Node:
@@ -73,6 +74,11 @@ class BinOp(Expression):
         if left_type == Types.Bool or right_type == Types.Bool:
             print(
                 f"ERROR: {operation_name} bool type is not allowed (line: {self.line_no}) "
+            )
+            return (1, "")
+        if left_type == Types.String or right_type == Types.String:
+            print(
+                f"ERROR: {operation_name} string type is not allowed (line: {self.line_no}) "
             )
             return (1, "")
         if left_type == right_type == Types.Int:
@@ -281,6 +287,11 @@ class FloatValue(Value):
 class BoolValue(Value):
     def __init__(self, line_no, value):
         super().__init__(line_no, value, Types.Bool)
+
+
+class StringValue(Value):
+    def __init__(self, line_no, value):
+        super().__init__(line_no, value, Types.String)
 
 
 class AST:
