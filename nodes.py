@@ -334,11 +334,11 @@ class Variable(Node):
             ProgramMemory.mem_counter += 1
         elif self.variable_type is Types.Float:
             output_lines.append(
-                f"  %{ProgramMemory.mem_counter} = alloca float, align 4"
+                f"%{ProgramMemory.mem_counter} = alloca float, align 4"
             )
             ProgramMemory.mem_counter += 1
         elif self.variable_type is Types.Bool:
-            output_lines.append(f"  %{ProgramMemory.mem_counter} = alloca i1")
+            output_lines.append(f"%{ProgramMemory.mem_counter} = alloca i1")
             ProgramMemory.mem_counter += 1
         return
 
@@ -346,17 +346,17 @@ class Variable(Node):
         var_type, var_value, var_mem_id = ProgramMemory.variables_dict[self.name]
         if var_type is Types.Int:
             output_lines.append(
-                f"  %{ProgramMemory.mem_counter} = load i32, i32* %{var_mem_id}, align 4"
+                f"%{ProgramMemory.mem_counter} = load i32, i32* %{var_mem_id}, align 4"
             )
             ProgramMemory.mem_counter += 1
         elif var_type is Types.Float:
             output_lines.append(
-                f"  %{ProgramMemory.mem_counter} = load float, float* %{var_mem_id}, align 4"
+                f"%{ProgramMemory.mem_counter} = load float, float* %{var_mem_id}, align 4"
             )
             ProgramMemory.mem_counter += 1
         elif var_type is Types.Bool:
             output_lines.append(
-                f"  %{ProgramMemory.mem_counter} = load i1, i1* %{var_mem_id}"
+                f"%{ProgramMemory.mem_counter} = load i1, i1* %{var_mem_id}"
             )
             ProgramMemory.mem_counter += 1
         return var_type, ProgramMemory.mem_counter - 1, ""
@@ -492,7 +492,7 @@ class AST:
             elif isinstance(node, Instructions):
                 print("Instructions instance")  # TODO to implement
 
-        output_lines.append(f"  ret i32 0")
+        output_lines.append(f"ret i32 0")
         output_lines.append(f"}}")
         join_and_write_to_file_ll(filename, output_lines)
 

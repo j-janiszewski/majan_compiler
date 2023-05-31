@@ -311,10 +311,8 @@ lexer = lex.lex()
 data = """
 
 bool num;
-num = !true;
-6 or false;
-
-
+!true;
+(!true) and false;
 
 """
 
