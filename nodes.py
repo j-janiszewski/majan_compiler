@@ -6,6 +6,8 @@ class ProgramMemory(object):
     mem_counter = 1
     labels_count = 1
     variables_dict = dict()
+    header_lines = []
+    str_alias = 1
 
 
 class Types(Enum):
@@ -360,6 +362,15 @@ class Assign(Instruction):
                 output_lines.append(
                     f"  store i1 %{right_mem_id}, i1* %{var_mem_id}"
                 )
+        if var_type is Types.String:
+            if right_value != "":
+                output_lines.append(    # TODO not sure if we can use mem_counter here or should dereference right_mem_id
+                    f"  store i8* %{ProgramMemory.mem_counter - 1}, i8** %{var_mem_id}"
+                )
+            else:
+                print("ASSING string var ID - TODO")
+
+
         return var_type, var_mem_id, ""
 
 class Variable(Node):
@@ -412,12 +423,17 @@ class Variable(Node):
             ProgramMemory.mem_counter += 1
         elif var_type is Types.Float:
             output_lines.append(
-                f"  %{ProgramMemory.mem_counter} = load double, double* %{var_mem_id}, align 8"
+                f"%{ProgramMemory.mem_counter} = load double, double* %{var_mem_id}, align 8"
             )
             ProgramMemory.mem_counter += 1
         elif var_type is Types.Bool:
             output_lines.append(
                 f"%{ProgramMemory.mem_counter} = load i1, i1* %{var_mem_id}"
+            )
+            ProgramMemory.mem_counter += 1
+        elif var_type is Types.String:
+            output_lines.append(
+                f"%{ProgramMemory.mem_counter} = load i8*, i8** %{var_mem_id}"  # TODO check if there should be loaded str or pointer
             )
             ProgramMemory.mem_counter += 1
         return var_type, ProgramMemory.mem_counter - 1, ""
@@ -513,11 +529,14 @@ class Write(Instruction):
             output_lines.append(
                 "call i32(i8*, ...) @printf(i8* bitcast([6 x i8]* @False   to i8 *), i32 5)"
             )
-            ProgramMemory.MemCounter += 1
+            ProgramMemory.mem_counter += 1
             output_lines.append(f"br label %l{end_label}")
             output_lines.append(f"l{end_label}:")
         if type == Types.String:
-            pass  # TODO implement string printing
+            # No need to load mem_id before, because we are printig from dispatched variable
+            output_lines.append(
+                    f"%{ProgramMemory.mem_counter} = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strps, i32 0, i32 0), i8* %{mem_id})"
+                )
         return 0
 
 
@@ -557,9 +576,36 @@ class Read(Instruction):
 class StringValue(Value):
     def __init__(self, line_no, value):
         super().__init__(line_no, value, Types.String)
+        self.alias = f"str{ProgramMemory.str_alias}"
+        ProgramMemory.str_alias += 1
 
-    def allocate_string(self, mem_id, len, output_list):
-        output_list.append(f"%{mem_id} = alloca [{len + 1} x i8]")
+    def write_code(self, output_lines):
+        l = len(self.value) + 1
+        n = f"{self.alias}"
+        ProgramMemory.header_lines.append(
+            f'@{n} = private constant [{l} x i8] c"{self.value}\00"'
+        )   
+        output_lines.append(
+            f"  %{n} = alloca [{l+1} x i8]"
+        )
+        output_lines.append(
+            f"  %{ProgramMemory.mem_counter} = bitcast [{l} x i8]* %{n} to i8*"
+        )
+        output_lines.append(
+            f"  call void @llvm.memcpy.p0i8.p0i8.i64(i8* align 1 %{ProgramMemory.mem_counter}, i8* align 1 getelementptr inbounds ([{l} x i8], [{l} x i8]* @{n}, i32 0, i32 0), i64 {l}, i1 false)"
+        )
+        ProgramMemory.mem_counter += 1
+        output_lines.append(
+            f"  %ptr{n} = alloca i8*"
+        )
+        output_lines.append(
+            f"  %{ProgramMemory.mem_counter} = getelementptr inbounds [{l} x i8], [{l} x i8]* %{n}, i64 0, i64 0"
+        )
+        ProgramMemory.mem_counter += 1
+        output_lines.append(
+            f"  store i8* %{ProgramMemory.mem_counter - 1}, i8** %ptr{n}"
+        )
+        return self.value_type, f"%ptr{n}", l-1
 
 
 class AST:
@@ -590,14 +636,16 @@ class AST:
     def create_llvm_output(self, filename):
         output_lines = []
         # TODO Check if everything below is needed
-        output_lines.append(f'@int = constant [ 3 x i8] c"%d\\00"')
-        output_lines.append(f'@double = constant [ 4 x i8] c"%lf\\00"')
-        output_lines.append(f'@True = constant [5 x i8 ] c"True\\00"')
-        output_lines.append(f'@False = constant [6 x i8 ] c"False\\00"')
-        output_lines.append(f"")
-        output_lines.append(f"declare i32 @printf(i8*, ...)")
-        output_lines.append(f"declare i32 @scanf(i8*, ...)")
-        output_lines.append(f"")
+        ProgramMemory.header_lines.append(f'@int = constant [ 3 x i8] c"%d\\00"')
+        ProgramMemory.header_lines.append(f'@double = constant [ 4 x i8] c"%lf\\00"')
+        ProgramMemory.header_lines.append(f'@True = constant [5 x i8 ] c"True\\00"')
+        ProgramMemory.header_lines.append(f'@False = constant [6 x i8 ] c"False\\00"')
+        ProgramMemory.header_lines.append(f'@strps = constant [4 x i8] c\"%s\\0A\\00\"')
+        ProgramMemory.header_lines.append(f"")
+        ProgramMemory.header_lines.append(f"declare i32 @printf(i8*, ...)")
+        ProgramMemory.header_lines.append(f"declare i32 @scanf(i8*, ...)")
+        ProgramMemory.header_lines.append(f"declare void @llvm.memcpy.p0i8.p0i8.i64(i8* noalias nocapture writeonly, i8* noalias nocapture readonly, i64, i1 immarg)")
+        ProgramMemory.header_lines.append(f"")
         output_lines.append(
             f"define dso_local i32 @main() #0 {{"
         )  # TODO do we really need dso_local param?
@@ -631,7 +679,10 @@ class AST:
         return
 
 
-def join_and_write_to_file_ll(filename, data_lines):
-    data = "\n".join(data_lines)
+def join_and_write_to_file_ll(filename, main_lines):
+    ProgramMemory.header_lines.append(f"")
+    header = "\n".join(ProgramMemory.header_lines)
+    main = "\n".join(main_lines)
+    data = header + "\n" + main
     with open(filename + ".ll", "w") as file:
         file.write(data)
