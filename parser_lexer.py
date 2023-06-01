@@ -307,28 +307,6 @@ def p_error(p):
 # Build the lexer
 lexer = lex.lex()
 
-# testing
-data = """
-int a;
-int b;
-a / 2 - 1 * 3;
-write(a / 2 - 1 * 3);
-read(b);
-read + 5
-"""
-
-
 parser = yacc.yacc()
 
 
-result = parser.parse(data)
-
-print(result)
-
-from nodes import AST
-
-ast = AST(result)
-
-ast.check_semantic_errors()
-
-ast.create_llvm_output("ispies")
