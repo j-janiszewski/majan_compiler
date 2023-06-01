@@ -606,6 +606,39 @@ class StringValue(Value):
             f"  store i8* %{ProgramMemory.mem_counter - 1}, i8** %ptr{n}"
         )
         return self.value_type, f"%ptr{n}", l-1
+    
+
+class Length(Instruction):
+    def __init__(self, line_no, value) -> None:
+        super().__init__(line_no, value)
+        self.type = "length"
+
+    def check_semantics(self, variables_dict):
+        if not self.left.name in variables_dict:
+            print(f"ERROR: Undeclared variable (line: {self.line_no}) ")
+            return (1, "")
+        id_type = variables_dict[self.left.name]
+        if id_type != Types.String:
+            print(
+                f"ERROR: Function length accepts only string type variables (line: {self.line_no}) "
+            )
+            return (1, "")
+        return (0, Types.Int)
+    
+    def __str__(self, indent_level=0):
+        return super().__str__(indent_level, f"({self.type})")
+    
+    def write_code(self, output_lines):
+        var_type, var_mem_id, var_value = self.left.write_code(output_lines)
+        output_lines.append(
+            f"%{ProgramMemory.mem_counter} = call i64 @strlen(i8* %{var_mem_id})"
+        )
+        ProgramMemory.mem_counter += 1
+        output_lines.append(
+            f"%{ProgramMemory.mem_counter} = trunc i64 %{ProgramMemory.mem_counter - 1} to i32"
+        )
+        ProgramMemory.mem_counter += 1
+        return Types.Int, ProgramMemory.mem_counter - 1, ""
 
 
 class AST:
@@ -645,6 +678,7 @@ class AST:
         ProgramMemory.header_lines.append(f"declare i32 @printf(i8*, ...)")
         ProgramMemory.header_lines.append(f"declare i32 @scanf(i8*, ...)")
         ProgramMemory.header_lines.append(f"declare void @llvm.memcpy.p0i8.p0i8.i64(i8* noalias nocapture writeonly, i8* noalias nocapture readonly, i64, i1 immarg)")
+        ProgramMemory.header_lines.append(f"declare i64 @strlen(i8*)")
         ProgramMemory.header_lines.append(f"")
         output_lines.append(
             f"define dso_local i32 @main() #0 {{"

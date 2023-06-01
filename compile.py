@@ -12,8 +12,9 @@ else:
     data = """
     string a;
     a = "ispies";
-    int b;
-    write(a);
+    int b, c;
+    b = 2;
+    c = length(a) + b * 2;
     """
 
 result = parser.parse(data)
