@@ -396,6 +396,11 @@ class Variable(Node):
                 f"  %{ProgramMemory.mem_counter} = alloca i1"
             )
             ProgramMemory.mem_counter += 1
+        elif self.variable_type is Types.String:
+            output_lines.append(
+                f"  %{ProgramMemory.mem_counter} = alloca i8*"
+            )
+            ProgramMemory.mem_counter += 1
         return
 
     def write_code(self, output_lines):
@@ -552,6 +557,9 @@ class Read(Instruction):
 class StringValue(Value):
     def __init__(self, line_no, value):
         super().__init__(line_no, value, Types.String)
+
+    def allocate_string(self, mem_id, len, output_list):
+        output_list.append(f"%{mem_id} = alloca [{len + 1} x i8]")
 
 
 class AST:
