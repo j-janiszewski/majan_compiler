@@ -310,11 +310,12 @@ lexer = lex.lex()
 # testing
 data = """
 
-bool num;
-num = !true;
-6 or false;
-
-
+int a;
+int b;
+a / 2 - 1 * 3;
+write(a / 2 - 1 * 3);
+read(b);
+read + 5
 
 """
 
