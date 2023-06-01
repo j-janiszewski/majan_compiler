@@ -214,7 +214,20 @@ class BinOp(Instruction):
                 else:
                     output_lines.append(f"%{ProgramMemory.mem_counter} = phi i1[0, %l{first_case_label}],[%{right_mem_id},%l{label_go_to_end}]")
             if self.op =="or":
-                pass # TODO implement it
+                if left_val!="":
+                    output_lines.append(f"br i1 {left_val}, label %l{end_label}, label %l{second_case_label}")
+                else:
+                    output_lines.append(f"br i1 %{left_mem_id}, label %l{end_label}, label %l{second_case_label}")
+                output_lines.append(f"l{second_case_label}:")
+                _, right_mem_id, right_val = self.right.write_code(output_lines)
+                output_lines.append(f"br label %l{label_go_to_end}")
+                output_lines.append(f"l{label_go_to_end}:")
+                output_lines.append(f"br label %l{end_label}")
+                output_lines.append(f"l{end_label}:")
+                if right_val!="":
+                    output_lines.append(f"%{ProgramMemory.mem_counter} = phi i1[1, %l{first_case_label}],[{right_val},%l{label_go_to_end}]")
+                else:
+                    output_lines.append(f"%{ProgramMemory.mem_counter} = phi i1[1, %l{first_case_label}],[%{right_mem_id},%l{label_go_to_end}]")
             if self.op =="xor":
                 pass # TODO implement it
             ProgramMemory.mem_counter+=1
