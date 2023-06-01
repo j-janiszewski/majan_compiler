@@ -123,11 +123,11 @@ class BinOp(Instruction):
                 if left_type is Types.Int:
                     if left_val != "":
                         output_lines.append(
-                            f"  %{ProgramMemory.mem_counter} = sitofp i32 {left_val} to float"
+                            f"  %{ProgramMemory.mem_counter} = sitofp i32 {left_val} to double"
                         )
                     else:
                         output_lines.append(
-                            f"  %{ProgramMemory.mem_counter} = sitofp i32 %{left_mem_id} to float"
+                            f"  %{ProgramMemory.mem_counter} = sitofp i32 %{left_mem_id} to double"
                         )
                     left_val = ""
                     left_mem_id = ProgramMemory.mem_counter
@@ -135,11 +135,11 @@ class BinOp(Instruction):
                 else:
                     if right_val != "":
                         output_lines.append(
-                            f"  %{ProgramMemory.mem_counter} = sitofp i32 {right_val} to float"
+                            f"  %{ProgramMemory.mem_counter} = sitofp i32 {right_val} to double"
                         )
                     else:
                         output_lines.append(
-                            f"  %{ProgramMemory.mem_counter} = sitofp i32 %{right_mem_id} to float"
+                            f"  %{ProgramMemory.mem_counter} = sitofp i32 %{right_mem_id} to double"
                         )
                     right_val = ""
                     right_mem_id = ProgramMemory.mem_counter
@@ -151,7 +151,7 @@ class BinOp(Instruction):
                 result_type = "i32"
                 prefix = ""
             else:
-                result_type = "float"
+                result_type = "double"
                 prefix = "f"
             if result_type == "i32" and self.op == "/":
                 prefix = "u"
@@ -281,22 +281,22 @@ class Assign(Instruction):
             if right_type is Types.Int:
                 if right_value != "":
                     output_lines.append(
-                        f"  %{ProgramMemory.mem_counter} = sitofp i32 {right_value} to float"
+                        f"  %{ProgramMemory.mem_counter} = sitofp i32 {right_value} to double"
                     )
                     right_value = ""
                 else:
                     output_lines.append(
-                        f"  %{ProgramMemory.mem_counter} = sitofp i32 %{right_mem_id} to float"
+                        f"  %{ProgramMemory.mem_counter} = sitofp i32 %{right_mem_id} to double"
                     )
                 right_mem_id = ProgramMemory.mem_counter
                 ProgramMemory.mem_counter += 1
             if right_value != "":
                 output_lines.append(
-                    f"  store float {right_value}, float* %{var_mem_id}, align 4"
+                    f"  store double {right_value}, double* %{var_mem_id}, align 8"
                 )
             else:
                 output_lines.append(
-                    f"  store float %{right_mem_id}, float* %{var_mem_id}, align 4"
+                    f"  store double %{right_mem_id}, double* %{var_mem_id}, align 8"
                 )
         if var_type is Types.Bool:
             if right_value != "":
@@ -335,7 +335,7 @@ class Variable(Node):
             ProgramMemory.mem_counter += 1
         elif self.variable_type is Types.Float:
             output_lines.append(
-                f"  %{ProgramMemory.mem_counter} = alloca float, align 4"
+                f"  %{ProgramMemory.mem_counter} = alloca double, align 8"
             )
             ProgramMemory.mem_counter += 1
         elif self.variable_type is Types.Bool:
@@ -354,7 +354,7 @@ class Variable(Node):
             ProgramMemory.mem_counter += 1
         elif var_type is Types.Float:
             output_lines.append(
-                f"  %{ProgramMemory.mem_counter} = load float, float* %{var_mem_id}, align 4"
+                f"  %{ProgramMemory.mem_counter} = load double, double* %{var_mem_id}, align 8"
             )
             ProgramMemory.mem_counter += 1
         elif var_type is Types.Bool:
