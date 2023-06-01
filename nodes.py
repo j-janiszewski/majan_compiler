@@ -69,21 +69,46 @@ class BinOp(Instruction):
                 return self.__handle_arithmetic_operator(
                     "Dividing", left_type, right_type
                 )
+            case "or":
+                return self.__handle_logical_operator(
+                    "Logical OR", left_type, right_type
+                )
+            case "and":
+                return self.__handle_logical_operator(
+                    "Logical AND", left_type, right_type
+                )
+            case "xor":
+                return self.__handle_logical_operator(
+                    "Logical XOR", left_type, right_type
+                )
 
     def __handle_arithmetic_operator(self, operation_name, left_type, right_type):
-        if left_type == Types.Bool or right_type == Types.Bool:
+        if left_type in [Types.Bool, Types.String]:
             print(
-                f"ERROR: {operation_name} bool type is not allowed (line: {self.line_no}) "
+                f"ERROR: {left_type.value} on the left side of {operation_name} is not allowed (line: {self.line_no})"
             )
             return (1, "")
-        if left_type == Types.String or right_type == Types.String:
+        if right_type in [Types.Bool, Types.String]:
             print(
-                f"ERROR: {operation_name} string type is not allowed (line: {self.line_no}) "
+                f"ERROR: {right_type.value} on the right side of {operation_name} is not allowed (line: {self.line_no})"
             )
             return (1, "")
         if left_type == right_type == Types.Int:
             return (0, Types.Int)
         return (0, Types.Float)
+
+    def __handle_logical_operator(self, operation_name, left_type, right_type):
+        if left_type in [Types.Float, Types.Int, Types.String]:
+            print(
+                f"ERROR: {left_type.value} on the left side of {operation_name} is not allowed (line: {self.line_no})"
+            )
+            return (1, "")
+        if right_type in [Types.Float, Types.Int, Types.String]:
+            print(
+                f"ERROR: {right_type.value} on the right side of {operation_name} is not allowed (line: {self.line_no})"
+            )
+            return (1, "")
+        return (0, Types.Bool)
 
     def __str__(self, indent_level=0):
         return super().__str__(indent_level, f"({self.op})")
@@ -162,6 +187,28 @@ class BinOp(Instruction):
             return return_type, ProgramMemory.mem_counter - 1, ""
 
         return None, -1, "TODO"  # TODO other operations
+
+
+class UnOp(Instruction):
+    def __init__(self, line_no, left, op) -> None:
+        super().__init__(line_no, left)
+        self.type = "unop"
+        self.op = op
+
+    def __str__(self, indent_level=0):
+        return super().__str__(indent_level, f"({self.op})")
+
+    def check_semantics(self, variables_dict):
+        left_semantic_check, left_type = self.left.check_semantics(variables_dict)
+        if left_semantic_check != 0:
+            return (1, "")
+        if left_type != Types.Bool:
+            print(
+                "ERROR: Negation is only allowed for bool type (line: {self.line_no})"
+            )
+            return (1, "")
+        else:
+            return (0, Types.Bool)
 
 
 class Instructions(Node):
@@ -363,6 +410,58 @@ class Write(Instruction):
             return (1, "")
         return (0, id_type)
 
+    def write_code(self, output_lines: list):
+        type, mem_id, val = self.left.write_code(output_lines)
+        if type == Types.Int:
+            if val != "":
+                output_lines.append(
+                    f"call i32(i8*, ...) @printf(i8* bitcast([3 x i8]* @int to i8 *), i32 {val})"
+                )
+            else:
+                output_lines.append(
+                    f"call i32(i8*, ...) @printf(i8* bitcast([3 x i8]* @int to i8 *), i32 %{mem_id})"
+                )
+            ProgramMemory.mem_counter += 1
+        if type == Types.Float:
+            if val != "":
+                output_lines.append(
+                    f"call i32(i8*, ...) @printf(i8* bitcast([4 x i8]* @double to i8 *), double {val})"
+                )
+            else:
+                output_lines.append(
+                    f"call i32(i8*, ...) @printf(i8* bitcast([4 x i8]* @double to i8 *), double %{mem_id})"
+                )
+            ProgramMemory.mem_counter += 1
+        if type == Types.Bool:
+            then_label = ProgramMemory.labels_count
+            else_label = ProgramMemory.labels_count + 1
+            end_label = ProgramMemory.labels_count + 2
+            ProgramMemory.labels_count += 3
+            if val != "":
+                output_lines.append(
+                    f"br i1 {val}, label %l{then_label}, label %l{else_label}"
+                )
+            else:
+                output_lines.append(
+                    f"br i1 %{mem_id}, label %l{then_label}, label %l{else_label}"
+                )
+            output_lines.append(f"l{then_label}:")
+            output_lines.append(
+                "call i32(i8*, ...) @printf(i8* bitcast([5 x i8]* @True   to i8 *), i32 5)"
+            )
+            ProgramMemory.mem_counter += 1
+            output_lines.append(f"br label %l{end_label}")
+            output_lines.append(f"l{else_label}:")
+            output_lines.append(
+                "call i32(i8*, ...) @printf(i8* bitcast([6 x i8]* @False   to i8 *), i32 5)"
+            )
+            ProgramMemory.MemCounter += 1
+            output_lines.append(f"br label %l{end_label}")
+            output_lines.append(f"l{end_label}:")
+        if type == Types.String:
+            pass  # TODO implement string printing
+        return 0
+
 
 class Read(Instruction):
     def __init__(self, line_no, value) -> None:
@@ -379,7 +478,22 @@ class Read(Instruction):
                 f"ERROR: Reading to bool variable is not allowed (line: {self.line_no}) "
             )
             return (1, "")
+        # TODO: decide if reading to string variable is allowed
         return (0, id_type)
+
+    def write_code(self, output_lines: list):
+        type, _, ident_id = ProgramMemory.variables_dict[self.left.name]
+        if type == Types.Int:
+            output_lines.append(
+                f"call i32 (i8*, ...) @scanf(i8* bitcast ([3 x i8]* @int to i8*), i32* %{ident_id})"
+            )
+            ProgramMemory.mem_counter += 1
+        if type == Types.Float:
+            output_lines.append(
+                f"call i32 (i8*, ...) @scanf(i8* bitcast ([4 x i8]* @double to i8*), double* %{ident_id})"
+            )
+            ProgramMemory.mem_counter += 1
+        return 0
 
 
 class StringValue(Value):
