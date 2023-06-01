@@ -113,43 +113,6 @@ class BinOp(Instruction):
     def __str__(self, indent_level=0):
         return super().__str__(indent_level, f"({self.op})")
 
-    def __str__(self, indent_level=0):
-        return super().__str__(indent_level, f"({self.op})")
-
-    def write_code(self, output_lines):
-        if self.op in ["+", "-", "*", "/"]:
-            left_type, left_mem_id, left_val = self.left.write_code(output_lines)
-            right_type, right_mem_id, right_val = self.right.write_code(output_lines)
-
-            if left_type != right_type:
-                return_type = Types.Float
-                if left_type is Types.Int:
-                    if left_val != "":
-                        output_lines.append(
-                            f"  %{ProgramMemory.mem_counter} = sitofp i32 {left_val} to float"
-                        )
-                    else:
-                        output_lines.append(
-                            f"  %{ProgramMemory.mem_counter} = sitofp i32 %{left_mem_id} to float"
-                        )
-                    left_val = ""
-                    left_mem_id = ProgramMemory.mem_counter
-                    ProgramMemory.mem_counter += 1
-                else:
-                    if right_val != "":
-                        output_lines.append(
-                            f"  %{ProgramMemory.mem_counter} = sitofp i32 {right_val} to float"
-                        )
-                    else:
-                        output_lines.append(
-                            f"  %{ProgramMemory.mem_counter} = sitofp i32 %{right_mem_id} to float"
-                        )
-                    right_val = ""
-                    right_mem_id = ProgramMemory.mem_counter
-                    ProgramMemory.mem_counter += 1
-            else:
-                return_type = left_type
-
     def write_code(self, output_lines):
         if self.op in ["+", "-", "*", "/"]:
             left_type, left_mem_id, left_val = self.left.write_code(output_lines)
