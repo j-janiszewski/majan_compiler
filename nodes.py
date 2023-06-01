@@ -420,6 +420,58 @@ class Write(Instruction):
             return (1, "")
         return (0, id_type)
 
+    def write_code(self, output_lines: list):
+        type, mem_id, val = self.left.write_code(output_lines)
+        if type == Types.Int:
+            if val != "":
+                output_lines.append(
+                    f"call i32(i8*, ...) @printf(i8* bitcast([3 x i8]* @int to i8 *), i32 {val})"
+                )
+            else:
+                output_lines.append(
+                    f"call i32(i8*, ...) @printf(i8* bitcast([3 x i8]* @int to i8 *), i32 %{mem_id})"
+                )
+            ProgramMemory.mem_counter += 1
+        if type == Types.Float:
+            if val != "":
+                output_lines.append(
+                    f"call i32(i8*, ...) @printf(i8* bitcast([4 x i8]* @double to i8 *), double {val})"
+                )
+            else:
+                output_lines.append(
+                    f"call i32(i8*, ...) @printf(i8* bitcast([4 x i8]* @double to i8 *), double %{mem_id})"
+                )
+            ProgramMemory.mem_counter += 1
+        if type == Types.Bool:
+            then_label = ProgramMemory.labels_count
+            else_label = ProgramMemory.labels_count + 1
+            end_label = ProgramMemory.labels_count + 2
+            ProgramMemory.labels_count += 3
+            if val != "":
+                output_lines.append(
+                    f"br i1 {val}, label %l{then_label}, label %l{else_label}"
+                )
+            else:
+                output_lines.append(
+                    f"br i1 %{mem_id}, label %l{then_label}, label %l{else_label}"
+                )
+            output_lines.append(f"l{then_label}:")
+            output_lines.append(
+                "call i32(i8*, ...) @printf(i8* bitcast([5 x i8]* @True   to i8 *), i32 5)"
+            )
+            ProgramMemory.mem_counter += 1
+            output_lines.append(f"br label %l{end_label}")
+            output_lines.append(f"l{else_label}:")
+            output_lines.append(
+                "call i32(i8*, ...) @printf(i8* bitcast([6 x i8]* @False   to i8 *), i32 5)"
+            )
+            ProgramMemory.MemCounter += 1
+            output_lines.append(f"br label %l{end_label}")
+            output_lines.append(f"l{end_label}:")
+        if type == Types.String:
+            pass  # TODO implement string printing
+        return 0
+
 
 class Read(Instruction):
     def __init__(self, line_no, value) -> None:
@@ -436,7 +488,22 @@ class Read(Instruction):
                 f"ERROR: Reading to bool variable is not allowed (line: {self.line_no}) "
             )
             return (1, "")
+        # TODO: decide if reading to string variable is allowed
         return (0, id_type)
+
+    def write_code(self, output_lines: list):
+        type, _, ident_id = ProgramMemory.variables_dict[self.left.name]
+        if type == Types.Int:
+            output_lines.append(
+                f"call i32 (i8*, ...) @scanf(i8* bitcast ([3 x i8]* @int to i8*), i32* %{ident_id})"
+            )
+            ProgramMemory.mem_counter += 1
+        if type == Types.Float:
+            output_lines.append(
+                f"call i32 (i8*, ...) @scanf(i8* bitcast ([4 x i8]* @double to i8*), double* %{ident_id})"
+            )
+            ProgramMemory.mem_counter += 1
+        return 0
 
 
 class StringValue(Value):
