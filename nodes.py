@@ -113,7 +113,7 @@ class BinOp(Instruction):
     def __str__(self, indent_level=0):
         return super().__str__(indent_level, f"({self.op})")
 
-    def write_code(self, output_lines):
+    def write_code(self, output_lines: list):
         if self.op in ["+", "-", "*", "/"]:
             left_type, left_mem_id, left_val = self.left.write_code(output_lines)
             right_type, right_mem_id, right_val = self.right.write_code(output_lines)
@@ -185,8 +185,50 @@ class BinOp(Instruction):
 
             ProgramMemory.mem_counter += 1
             return return_type, ProgramMemory.mem_counter - 1, ""
-
-        return None, -1, "TODO"  # TODO other operations
+        if self.op in ["and", "xor", "or"]:
+            _, left_mem_id, left_val = self.left.write_code(output_lines)
+            first_case_label = ProgramMemory.labels_count
+            second_case_label = ProgramMemory.labels_count+1
+            end_label = ProgramMemory.labels_count+2
+            label_go_to_end = ProgramMemory.labels_count+3
+            ProgramMemory.labels_count+=4
+            output_lines.append(f"br label %l{first_case_label}")
+            output_lines.append(f"l{first_case_label}:")
+            if self.op =="and":
+                if left_val!="":
+                    output_lines.append(f"br i1 {left_val}, label %l{second_case_label}, label %l{end_label}")
+                else:
+                    output_lines.append(f"br i1 %{left_mem_id}, label %l{second_case_label}, label %l{end_label}")
+                output_lines.append(f"l{second_case_label}:")
+                _, right_mem_id, right_val = self.right.write_code(output_lines)
+                output_lines.append(f"br label %l{label_go_to_end}")
+                output_lines.append(f"l{label_go_to_end}:")
+                output_lines.append(f"br label %l{end_label}")
+                output_lines.append(f"l{end_label}:")
+                if right_val!="":
+                    output_lines.append(f"%{ProgramMemory.mem_counter} = phi i1[0, %l{first_case_label}],[{right_val},%l{label_go_to_end}]")
+                else:
+                    output_lines.append(f"%{ProgramMemory.mem_counter} = phi i1[0, %l{first_case_label}],[%{right_mem_id},%l{label_go_to_end}]")
+            if self.op =="or":
+                if left_val!="":
+                    output_lines.append(f"br i1 {left_val}, label %l{end_label}, label %l{second_case_label}")
+                else:
+                    output_lines.append(f"br i1 %{left_mem_id}, label %l{end_label}, label %l{second_case_label}")
+                output_lines.append(f"l{second_case_label}:")
+                _, right_mem_id, right_val = self.right.write_code(output_lines)
+                output_lines.append(f"br label %l{label_go_to_end}")
+                output_lines.append(f"l{label_go_to_end}:")
+                output_lines.append(f"br label %l{end_label}")
+                output_lines.append(f"l{end_label}:")
+                if right_val!="":
+                    output_lines.append(f"%{ProgramMemory.mem_counter} = phi i1[1, %l{first_case_label}],[{right_val},%l{label_go_to_end}]")
+                else:
+                    output_lines.append(f"%{ProgramMemory.mem_counter} = phi i1[1, %l{first_case_label}],[%{right_mem_id},%l{label_go_to_end}]")
+            if self.op =="xor":
+                pass # TODO implement it
+            ProgramMemory.mem_counter+=1
+            return Types.Bool, ProgramMemory.mem_counter-1,""
+        
 
 
 class UnOp(Instruction):
@@ -209,6 +251,16 @@ class UnOp(Instruction):
             return (1, "")
         else:
             return (0, Types.Bool)
+        
+    def write_code(self, output_lines: list):
+        _, mem_id, val = self.left.write_code(output_lines)
+        if val !="":
+            output_lines.append(f"%{ProgramMemory.mem_counter} = xor i1 {val}, 1")
+        else:
+            output_lines.append(f"%{ProgramMemory.mem_counter} = xor i1 %{mem_id}, 1")
+        ProgramMemory.mem_counter+=1
+        return Types.Bool, ProgramMemory.mem_counter-1, ""
+        
 
 
 class Instructions(Node):
@@ -228,6 +280,7 @@ class Instructions(Node):
         for i, inst in enumerate(self.instructions):
             node_as_text += f" {indentation}{i}: {inst.__str__()} \n"
         return node_as_text
+
 
 
 class Init(Node):
@@ -349,7 +402,7 @@ class Variable(Node):
         var_type, var_value, var_mem_id = ProgramMemory.variables_dict[self.name]
         if var_type is Types.Int:
             output_lines.append(
-                f"  %{ProgramMemory.mem_counter} = load i32, i32* %{var_mem_id}, align 4"
+                f"%{ProgramMemory.mem_counter} = load i32, i32* %{var_mem_id}, align 4"
             )
             ProgramMemory.mem_counter += 1
         elif var_type is Types.Float:
@@ -359,7 +412,7 @@ class Variable(Node):
             ProgramMemory.mem_counter += 1
         elif var_type is Types.Bool:
             output_lines.append(
-                f"  %{ProgramMemory.mem_counter} = load i1, i1* %{var_mem_id}"
+                f"%{ProgramMemory.mem_counter} = load i1, i1* %{var_mem_id}"
             )
             ProgramMemory.mem_counter += 1
         return var_type, ProgramMemory.mem_counter - 1, ""
@@ -562,7 +615,7 @@ class AST:
             elif isinstance(node, Instructions):
                 print("Instructions instance")  # TODO to implement
 
-        output_lines.append(f"  ret i32 0")
+        output_lines.append(f"ret i32 0")
         output_lines.append(f"}}")
         join_and_write_to_file_ll(filename, output_lines)
 
