@@ -162,11 +162,11 @@ class BinOp(Instruction):
                 if left_type is Types.Int:
                     if left_val != "":
                         output_lines.append(
-                            f"  %{ProgramMemory.mem_counter} = sitofp i32 {left_val} to double"
+                            f"%{ProgramMemory.mem_counter} = sitofp i32 {left_val} to double"
                         )
                     else:
                         output_lines.append(
-                            f"  %{ProgramMemory.mem_counter} = sitofp i32 %{left_mem_id} to double"
+                            f"%{ProgramMemory.mem_counter} = sitofp i32 %{left_mem_id} to double"
                         )
                     left_val = ""
                     left_mem_id = ProgramMemory.mem_counter
@@ -174,11 +174,11 @@ class BinOp(Instruction):
                 else:
                     if right_val != "":
                         output_lines.append(
-                            f"  %{ProgramMemory.mem_counter} = sitofp i32 {right_val} to double"
+                            f"%{ProgramMemory.mem_counter} = sitofp i32 {right_val} to double"
                         )
                     else:
                         output_lines.append(
-                            f"  %{ProgramMemory.mem_counter} = sitofp i32 %{right_mem_id} to double"
+                            f"%{ProgramMemory.mem_counter} = sitofp i32 %{right_mem_id} to double"
                         )
                     right_val = ""
                     right_mem_id = ProgramMemory.mem_counter
@@ -207,24 +207,24 @@ class BinOp(Instruction):
 
             if left_val != "" and right_val != "":
                 output_lines.append(
-                    f"  %{ProgramMemory.mem_counter} = {prefix}{operation} {result_type} {left_val}, {right_val}"
+                    f"%{ProgramMemory.mem_counter} = {prefix}{operation} {result_type} {left_val}, {right_val}"
                 )
             elif left_val != "":
                 output_lines.append(
-                    f"  %{ProgramMemory.mem_counter} = {prefix}{operation} {result_type} {left_val}, %{right_mem_id}"
+                    f"%{ProgramMemory.mem_counter} = {prefix}{operation} {result_type} {left_val}, %{right_mem_id}"
                 )
             elif right_val != "":
                 output_lines.append(
-                    f"  %{ProgramMemory.mem_counter} = {prefix}{operation} {result_type} %{left_mem_id}, {right_val}"
+                    f"%{ProgramMemory.mem_counter} = {prefix}{operation} {result_type} %{left_mem_id}, {right_val}"
                 )
             else:
                 output_lines.append(
-                    f"  %{ProgramMemory.mem_counter} = {prefix}{operation} {result_type} %{left_mem_id}, %{right_mem_id}"
+                    f"%{ProgramMemory.mem_counter} = {prefix}{operation} {result_type} %{left_mem_id}, %{right_mem_id}"
                 )
 
             ProgramMemory.mem_counter += 1
             return return_type, ProgramMemory.mem_counter - 1, ""
-        if self.op in ["and", "xor", "or"]:
+        if self.op in ["and","or"]:
             _, left_mem_id, left_val = self.left.write_code(output_lines)
             first_case_label = ProgramMemory.labels_count
             second_case_label = ProgramMemory.labels_count+1
@@ -262,9 +262,29 @@ class BinOp(Instruction):
                 if right_val!="":
                     output_lines.append(f"%{ProgramMemory.mem_counter} = phi i1[1, %l{first_case_label}],[{right_val},%l{label_go_to_end}]")
                 else:
+                
                     output_lines.append(f"%{ProgramMemory.mem_counter} = phi i1[1, %l{first_case_label}],[%{right_mem_id},%l{label_go_to_end}]")
-            if self.op =="xor":
-                pass # TODO implement it
+            ProgramMemory.mem_counter+=1
+            return Types.Bool, ProgramMemory.mem_counter-1,""
+        if self.op =="xor":
+            _, left_mem_id, left_val = self.left.write_code(output_lines)
+            _, right_mem_id, right_val = self.right.write_code(output_lines)
+            if left_val != "" and right_val != "":
+                output_lines.append(
+                    f"%{ProgramMemory.mem_counter} = xor i1 {left_val}, {right_val}"
+                )
+            elif left_val != "":
+                output_lines.append(
+                    f"%{ProgramMemory.mem_counter} = xor i1 {left_val}, %{right_mem_id}"
+                )
+            elif right_val != "":
+                output_lines.append(
+                    f"%{ProgramMemory.mem_counter} = xor i1 %{left_mem_id}, {right_val}"
+                )
+            else:
+                output_lines.append(
+                    f"%{ProgramMemory.mem_counter} = xor i1 %{left_mem_id}, %{right_mem_id}"
+                )
             ProgramMemory.mem_counter+=1
             return Types.Bool, ProgramMemory.mem_counter-1,""
         
@@ -363,11 +383,11 @@ class Assign(Instruction):
         if var_type is Types.Int:
             if right_value != "":
                 output_lines.append(
-                    f"  store i32 {right_value}, i32* %{var_mem_id}, align 4"
+                    f"store i32 {right_value}, i32* %{var_mem_id}, align 4"
                 )
             else:
                 output_lines.append(
-                    f"  store i32 %{right_mem_id}, i32* %{var_mem_id}, align 4"
+                    f"store i32 %{right_mem_id}, i32* %{var_mem_id}, align 4"
                 )
         if var_type is Types.Float:
             if right_type is Types.Int:
@@ -384,20 +404,20 @@ class Assign(Instruction):
                 ProgramMemory.mem_counter += 1
             if right_value != "":
                 output_lines.append(
-                    f"  store double {right_value}, double* %{var_mem_id}, align 8"
+                    f"store double {right_value}, double* %{var_mem_id}, align 8"
                 )
             else:
                 output_lines.append(
-                    f"  store double %{right_mem_id}, double* %{var_mem_id}, align 8"
+                    f"store double %{right_mem_id}, double* %{var_mem_id}, align 8"
                 )
         if var_type is Types.Bool:
             if right_value != "":
                 output_lines.append(
-                    f"  store i1 {right_value}, i1* %{var_mem_id}"
+                    f"store i1 {right_value}, i1* %{var_mem_id}"
                 )
             else:
                 output_lines.append(
-                    f"  store i1 %{right_mem_id}, i1* %{var_mem_id}"
+                    f"store i1 %{right_mem_id}, i1* %{var_mem_id}"
                 )
         if var_type is Types.String:
             if right_value != "":
