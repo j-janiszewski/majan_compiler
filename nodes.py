@@ -393,12 +393,12 @@ class Assign(Instruction):
             if right_type is Types.Int:
                 if right_value != "":
                     output_lines.append(
-                        f"  %{ProgramMemory.mem_counter} = sitofp i32 {right_value} to double"
+                        f"%{ProgramMemory.mem_counter} = sitofp i32 {right_value} to double"
                     )
                     right_value = ""
                 else:
                     output_lines.append(
-                        f"  %{ProgramMemory.mem_counter} = sitofp i32 %{right_mem_id} to double"
+                        f"%{ProgramMemory.mem_counter} = sitofp i32 %{right_mem_id} to double"
                     )
                 right_mem_id = ProgramMemory.mem_counter
                 ProgramMemory.mem_counter += 1
@@ -422,7 +422,7 @@ class Assign(Instruction):
         if var_type is Types.String:
             if right_value != "":
                 output_lines.append(    # TODO not sure if we can use mem_counter here or should dereference right_mem_id
-                    f"  store i8* %{ProgramMemory.mem_counter - 1}, i8** %{var_mem_id}"
+                    f"store i8* %{ProgramMemory.mem_counter - 1}, i8** %{var_mem_id}"
                 )
                 ProgramMemory.variables_dict[self.left.name] = (
                         var_type,
@@ -452,22 +452,22 @@ class Variable(Node):
     def write_init_code(self, output_lines):
         if self.variable_type is Types.Int:
             output_lines.append(
-                f"  %{ProgramMemory.mem_counter} = alloca i32, align 4"
+                f"%{ProgramMemory.mem_counter} = alloca i32, align 4"
             )
             ProgramMemory.mem_counter += 1
         elif self.variable_type is Types.Float:
             output_lines.append(
-                f"  %{ProgramMemory.mem_counter} = alloca double, align 8"
+                f"%{ProgramMemory.mem_counter} = alloca double, align 8"
             )
             ProgramMemory.mem_counter += 1
         elif self.variable_type is Types.Bool:
             output_lines.append(
-                f"  %{ProgramMemory.mem_counter} = alloca i1"
+                f"%{ProgramMemory.mem_counter} = alloca i1"
             )
             ProgramMemory.mem_counter += 1
         elif self.variable_type is Types.String:
             output_lines.append(
-                f"  %{ProgramMemory.mem_counter} = alloca i8*"
+                f"%{ProgramMemory.mem_counter} = alloca i8*"
             )
             ProgramMemory.mem_counter += 1
         return
@@ -592,7 +592,7 @@ class Write(Instruction):
             output_lines.append(f"br label %l{end_label}")
             output_lines.append(f"l{end_label}:")
         if type == Types.String:
-            # No need to load mem_id before, because we are printig from dispatched variable
+            # No need to load mem_id before, because we are printing from dispatched variable
             output_lines.append(
                     f"%{ProgramMemory.mem_counter} = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strps, i32 0, i32 0), i8* %{mem_id})"
                 )
@@ -669,24 +669,24 @@ class StringValue(Value):
             f'@{n} = private constant [{l} x i8] c"{self.value}\00"'
         )   
         output_lines.append(
-            f"  %{n} = alloca [{l+1} x i8]"
+            f"%{n} = alloca [{l+1} x i8]"
         )
         output_lines.append(
-            f"  %{ProgramMemory.mem_counter} = bitcast [{l} x i8]* %{n} to i8*"
+            f"%{ProgramMemory.mem_counter} = bitcast [{l} x i8]* %{n} to i8*"
         )
         output_lines.append(
-            f"  call void @llvm.memcpy.p0i8.p0i8.i64(i8* align 1 %{ProgramMemory.mem_counter}, i8* align 1 getelementptr inbounds ([{l} x i8], [{l} x i8]* @{n}, i32 0, i32 0), i64 {l}, i1 false)"
-        )
-        ProgramMemory.mem_counter += 1
-        output_lines.append(
-            f"  %ptr{n} = alloca i8*"
-        )
-        output_lines.append(
-            f"  %{ProgramMemory.mem_counter} = getelementptr inbounds [{l} x i8], [{l} x i8]* %{n}, i64 0, i64 0"
+            f"call void @llvm.memcpy.p0i8.p0i8.i64(i8* align 1 %{ProgramMemory.mem_counter}, i8* align 1 getelementptr inbounds ([{l} x i8], [{l} x i8]* @{n}, i32 0, i32 0), i64 {l}, i1 false)"
         )
         ProgramMemory.mem_counter += 1
         output_lines.append(
-            f"  store i8* %{ProgramMemory.mem_counter - 1}, i8** %ptr{n}"
+            f"%ptr{n} = alloca i8*"
+        )
+        output_lines.append(
+            f"%{ProgramMemory.mem_counter} = getelementptr inbounds [{l} x i8], [{l} x i8]* %{n}, i64 0, i64 0"
+        )
+        ProgramMemory.mem_counter += 1
+        output_lines.append(
+            f"store i8* %{ProgramMemory.mem_counter - 1}, i8** %ptr{n}"
         )
         return self.value_type, f"%ptr{n}", l-1
     
@@ -771,7 +771,7 @@ class AST:
             f"define dso_local i32 @main() #0 {{"
         )  # TODO do we really need dso_local param?
         if self.root == None:
-            output_lines.append(f"  ret i32 0")
+            output_lines.append(f"ret i32 0")
             output_lines.append(f"}}")
             join_and_write_to_file_ll(filename, output_lines)
             return
