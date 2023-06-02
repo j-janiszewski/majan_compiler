@@ -56,9 +56,12 @@ class BinOp(Instruction):
             return (1, "")
         match self.op:
             case "+":
-                return self.__handle_arithmetic_operator(
-                    "Adding", left_type, right_type
-                )
+                if left_type == right_type == Types.String:
+                    return (0, Types.String)
+                else:
+                    return self.__handle_arithmetic_operator(
+                        "Adding", left_type, right_type
+                    )
             case "-":
                 return self.__handle_arithmetic_operator(
                     "Substracting", left_type, right_type
@@ -119,6 +122,39 @@ class BinOp(Instruction):
         if self.op in ["+", "-", "*", "/"]:
             left_type, left_mem_id, left_val = self.left.write_code(output_lines)
             right_type, right_mem_id, right_val = self.right.write_code(output_lines)
+
+            if left_type == right_type == Types.String and self.op is "+":
+                l = left_val + right_val + 1
+                output_lines.append(
+                    f"%{ProgramMemory.mem_counter} = alloca [{l} x i8]"
+                )
+                mem_str = ProgramMemory.mem_counter
+                ProgramMemory.mem_counter += 1
+                output_lines.append(
+                    f"%{ProgramMemory.mem_counter} = alloca i8*"
+                )
+                mem_ptrstr = ProgramMemory.mem_counter
+                ProgramMemory.mem_counter += 1
+                output_lines.append(
+                    f"%{ProgramMemory.mem_counter} = getelementptr inbounds [{l} x i8], [{l} x i8]* %{mem_str}, i64 0, i64 0"
+                )
+                ProgramMemory.mem_counter += 1
+                output_lines.append(
+                    f"store i8* %{ProgramMemory.mem_counter - 1}, i8** %{mem_ptrstr}"
+                )
+                output_lines.append(
+                    f"%{ProgramMemory.mem_counter} = load i8*, i8** %{mem_ptrstr}"
+                )
+                ProgramMemory.mem_counter += 1
+                output_lines.append(    # Not sure if % should be before left_mem_id
+                    f"%{ProgramMemory.mem_counter} = call i8* @strcpy(i8* %{ProgramMemory.mem_counter - 1}, i8* %{left_mem_id})"
+                )
+                ProgramMemory.mem_counter += 1
+                output_lines.append(    # Not sure if % should be before right_mem_id
+                    f"%{ProgramMemory.mem_counter} = call i8* @strcat(i8* %{ProgramMemory.mem_counter - 2}, i8* %{right_mem_id})"
+                )
+                ProgramMemory.mem_counter += 1
+                return Types.String, ProgramMemory.mem_counter - 3, l-1
 
             if left_type != right_type:
                 return_type = Types.Float
@@ -367,10 +403,11 @@ class Assign(Instruction):
                 output_lines.append(    # TODO not sure if we can use mem_counter here or should dereference right_mem_id
                     f"  store i8* %{ProgramMemory.mem_counter - 1}, i8** %{var_mem_id}"
                 )
-            else:
-                print("ASSING string var ID - TODO")
-
-
+                ProgramMemory.variables_dict[self.left.name] = (
+                        var_type,
+                        right_value,
+                        var_mem_id,
+                    )
         return var_type, var_mem_id, ""
 
 class Variable(Node):
@@ -433,9 +470,10 @@ class Variable(Node):
             ProgramMemory.mem_counter += 1
         elif var_type is Types.String:
             output_lines.append(
-                f"%{ProgramMemory.mem_counter} = load i8*, i8** %{var_mem_id}"  # TODO check if there should be loaded str or pointer
+                f"%{ProgramMemory.mem_counter} = load i8*, i8** %{var_mem_id}"
             )
             ProgramMemory.mem_counter += 1
+            return var_type, ProgramMemory.mem_counter - 1, var_value
         return var_type, ProgramMemory.mem_counter - 1, ""
 
 
@@ -679,6 +717,8 @@ class AST:
         ProgramMemory.header_lines.append(f"declare i32 @scanf(i8*, ...)")
         ProgramMemory.header_lines.append(f"declare void @llvm.memcpy.p0i8.p0i8.i64(i8* noalias nocapture writeonly, i8* noalias nocapture readonly, i64, i1 immarg)")
         ProgramMemory.header_lines.append(f"declare i64 @strlen(i8*)")
+        ProgramMemory.header_lines.append(f"declare i8* @strcpy(i8*, i8*)")
+        ProgramMemory.header_lines.append(f"declare i8* @strcat(i8*, i8*)")
         ProgramMemory.header_lines.append(f"")
         output_lines.append(
             f"define dso_local i32 @main() #0 {{"

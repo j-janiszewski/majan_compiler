@@ -10,11 +10,12 @@ if len(sys.argv) >1:
         data = f.read()
 else:
     data = """
-    string a;
+    string a, b, c;
     a = "ispies";
-    int b, c;
-    b = 2;
-    c = length(a) + b * 2;
+    b = "tru";
+    c = a + b;
+    int l;
+    l = length(c) + 1;
     """
 
 result = parser.parse(data)
