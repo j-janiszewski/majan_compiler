@@ -124,7 +124,7 @@ class BinOp(Instruction):
             left_type, left_mem_id, left_val = self.left.write_code(output_lines)
             right_type, right_mem_id, right_val = self.right.write_code(output_lines)
 
-            if left_type == right_type == Types.String and self.op is "+":
+            if left_type == right_type == Types.String and self.op == "+":
                 l = left_val + right_val + 1
                 output_lines.append(
                     f"%{ProgramMemory.mem_counter} = alloca [{l} x i8]"
@@ -666,7 +666,7 @@ class StringValue(Value):
         l = len(self.value) + 1
         n = f"{self.alias}"
         ProgramMemory.header_lines.append(
-            f'@{n} = private constant [{l} x i8] c"{self.value}\00"'
+            f'@{n} = private constant [{l} x i8] c"{self.value}\\00"'
         )   
         output_lines.append(
             f"%{n} = alloca [{l+1} x i8]"
