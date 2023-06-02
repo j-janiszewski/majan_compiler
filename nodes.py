@@ -8,6 +8,7 @@ class ProgramMemory(object):
     variables_dict = dict()
     header_lines = []
     str_alias = 1
+    buffer_size = 16
 
 
 class Types(Enum):
@@ -593,7 +594,6 @@ class Read(Instruction):
                 f"ERROR: Reading to bool variable is not allowed (line: {self.line_no}) "
             )
             return (1, "")
-        # TODO: decide if reading to string variable is allowed
         return (0, id_type)
 
     def write_code(self, output_lines: list):
@@ -608,6 +608,31 @@ class Read(Instruction):
                 f"call i32 (i8*, ...) @scanf(i8* bitcast ([4 x i8]* @double to i8*), double* %{ident_id})"
             )
             ProgramMemory.mem_counter += 1
+        if type == Types.String:
+            output_lines.append(
+                f"%{ProgramMemory.mem_counter} = alloca [{ProgramMemory.buffer_size + 1} x i8]"
+            )
+            mem_str = ProgramMemory.mem_counter
+            ProgramMemory.mem_counter += 1
+            output_lines.append(
+                f"%{ident_id} = alloca i8*"
+            )
+            output_lines.append(
+                f"%{ProgramMemory.mem_counter} = getelementptr inbounds [{ProgramMemory.buffer_size + 1} x i8], [{ProgramMemory.buffer_size + 1} x i8]* %{mem_str}, i64 0, i64 0"
+            )
+            ProgramMemory.mem_counter += 1
+            output_lines.append(
+                f"store i8* %{ProgramMemory.mem_counter - 1}, i8** %{ident_id}"
+            )
+            output_lines.append(
+                f"%{ProgramMemory.mem_counter} = call i32 (i8*, ...) @__isoc99_scanf(i8* getelementptr inbounds ([5 x i8], [5 x i8]* @strs, i32 0, i32 0), i8* %{ProgramMemory.mem_counter - 1})"
+            )
+            ProgramMemory.mem_counter += 1
+            ProgramMemory.variables_dict[self.left.name] = (
+                        type,
+                        ProgramMemory.buffer_size,
+                        ident_id,
+                    )
         return 0
 
 
@@ -712,6 +737,7 @@ class AST:
         ProgramMemory.header_lines.append(f'@True = constant [5 x i8 ] c"True\\00"')
         ProgramMemory.header_lines.append(f'@False = constant [6 x i8 ] c"False\\00"')
         ProgramMemory.header_lines.append(f'@strps = constant [4 x i8] c\"%s\\0A\\00\"')
+        ProgramMemory.header_lines.append(f'@strs = constant [5 x i8] c\"%10s\\00\"')
         ProgramMemory.header_lines.append(f"")
         ProgramMemory.header_lines.append(f"declare i32 @printf(i8*, ...)")
         ProgramMemory.header_lines.append(f"declare i32 @scanf(i8*, ...)")
@@ -719,6 +745,7 @@ class AST:
         ProgramMemory.header_lines.append(f"declare i64 @strlen(i8*)")
         ProgramMemory.header_lines.append(f"declare i8* @strcpy(i8*, i8*)")
         ProgramMemory.header_lines.append(f"declare i8* @strcat(i8*, i8*)")
+        ProgramMemory.header_lines.append(f"declare i32 @__isoc99_scanf(i8*, ...)")
         ProgramMemory.header_lines.append(f"")
         output_lines.append(
             f"define dso_local i32 @main() #0 {{"
@@ -742,8 +769,6 @@ class AST:
                     next = next.left
             elif isinstance(node, Instruction):
                 node.write_code(output_lines)
-            elif isinstance(node, Instructions):
-                print("Instructions instance")  # TODO to implement
 
         output_lines.append(f"ret i32 0")
         output_lines.append(f"}}")
