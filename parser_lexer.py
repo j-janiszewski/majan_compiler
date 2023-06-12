@@ -49,7 +49,7 @@ tokens = (
     "COMPARISON"
 )
 
-t_COMPARISON =r"(==)|(>)|(<)|(>=)|(<=)"
+t_COMPARISON =r"(>=)|(<=)|(==)|(>)|(<)"
 t_PLUS = r"\+"
 t_MINUS = r"-"
 t_TIMES = r"\*"

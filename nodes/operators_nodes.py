@@ -50,12 +50,12 @@ class BinOp(Instruction):
             
 
     def __handle_comparison_operator(self, operation_name, left_type, right_type):
-        if left_type in [Types.Bool, Types.String]:
+        if left_type in [Types.String]:
             print(
                 f"ERROR: {left_type.value} on the left side of {operation_name} is not allowed (line: {self.line_no})"
             )
             return (1, "")
-        if right_type in [Types.Bool, Types.String]:
+        if right_type in [Types.String]:
             print(
                 f"ERROR: {right_type.value} on the right side of {operation_name} is not allowed (line: {self.line_no})"
             )
@@ -268,8 +268,55 @@ class BinOp(Instruction):
             return Types.Bool, ProgramMemory.mem_counter-1,""
 
     def __write_code_comparison_operators(self, output_lines: list):
-        # finish it
-        pass
+        left_type, left_mem_id, left_val = self.left.write_code(output_lines)
+        right_type, right_mem_id, right_val = self.right.write_code(output_lines)
+        if left_type == Types.Bool:
+            args_type = "i1"
+            prefix = "i"
+        elif left_type == Types.Float:
+            args_type = "double"
+            prefix="f"
+        elif left_type == Types.Int:
+            args_type = "i32"
+            prefix="i"
+        match self.op:
+            case "==":
+                if prefix == "i":
+                    operation ="eq"
+                else:
+                    operation = "oeq"
+            case "<":
+                if prefix == "i":
+                    operation ="slt"
+                else:
+                    operation = "ult"
+            case "<":
+                if prefix == "i":
+                    operation ="sgt"
+                else:
+                    operation = "ugt"
+            case ">=":
+                if prefix == "i":
+                    operation ="sge"
+                else:
+                    operation = "uge"
+            case "<=":
+                if prefix == "i":
+                    operation ="sle"
+                else:
+                    operation = "ule"
+        if right_val != "" and left_val!="":
+            output_lines.append(f"%{ProgramMemory.mem_counter} = {prefix}cmp {operation} {args_type} {left_val} , {right_val}")
+        elif right_val != "":
+            output_lines.append(f"%{ProgramMemory.mem_counter} = {prefix}cmp {operation} {args_type} %{left_mem_id} , {right_val}")
+        elif left_val != "":
+            output_lines.append(f"%{ProgramMemory.mem_counter} = {prefix}cmp {operation} {args_type} {left_val} , %{right_mem_id}")
+        else:
+            output_lines.append(f"%{ProgramMemory.mem_counter} = {prefix}cmp {operation} {args_type} %{left_mem_id} , %{right_mem_id}")
+        ProgramMemory.mem_counter+=1
+        return Types.Bool, ProgramMemory.mem_counter-1, ""
+            
+
 
     def write_code(self, output_lines: list):
         if self.op in ["+", "-", "*", "/"]:

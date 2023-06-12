@@ -98,7 +98,7 @@ class Variable(Node):
 
     def check_semantics(self, variables_dict):
         if not self.name in variables_dict:
-            print(f"ERROR: Undeclared variable (line: {self.line_no}) ")
+            print(f"ERROR: Undeclared variable '{self.name}' (line: {self.line_no}) ")
             return (1, "")
         return (0, variables_dict[self.name])
 
