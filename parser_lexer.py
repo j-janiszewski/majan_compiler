@@ -15,7 +15,8 @@ from nodes import (
     StringValue,
     UnOp,
     Length,
-    If
+    If,
+    While
 )
 
 tokens = (
@@ -178,6 +179,10 @@ def p_instruction_if_else(p):
     node.left = p[6]
     node.right = p[10]
     p[0] = node
+
+def p_instruction_while(p):
+    """instruction : WHILE LPAREN expression RPAREN LCURLY lines RCURLY """
+    p[0] = While(p.lineno(1),p[3],p[6])
 
 def p_instruction_assignment_exp(p):
     """instruction : ID ASSIGNMENT expression SEMICOLON"""

@@ -11,19 +11,14 @@ if len(sys.argv) >1:
 else:
     data = """
     int a, b, c;
-    float d;
-    bool num;
-    d=76.5;
-    a=70;
-    b=7;
-    if(a <=(b + 5)) {
-    write(6);
-    b*5;
 
-    } else {
-    write(2);
-    }
+    a=2;
    
+   while (a<10){
+   write(a);
+   write(true);
+   a = a+ 1;
+   }
     
     """
 result = parser.parse(data)
