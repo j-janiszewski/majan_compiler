@@ -57,8 +57,20 @@ class Instructions(Node):
         indentation = " " * 4 * indent_level
         node_as_text = f"{indentation} Instructions node:\n"
         for i, inst in enumerate(self.instructions):
-            node_as_text += f" {indentation}{i}: {inst.__str__()} \n"
+            node_as_text += f" {indentation}{i}: {inst.__str__(indent_level)} \n"
         return node_as_text
+
+    def check_semantics(self, variables_dict):
+        for node in self.instructions:
+            semantic_check, _ = node.check_semantics(variables_dict)
+            if semantic_check != 0:
+                return 1, ""
+        return 0, ""
+    
+    def write_code(self, output_lines: list):
+        for node in self.instructions:
+            node.write_code(output_lines)
+        return 0
 
 
 class AST:

@@ -15,6 +15,7 @@ from nodes import (
     StringValue,
     UnOp,
     Length,
+    If
 )
 
 tokens = (
@@ -37,6 +38,8 @@ tokens = (
     "BOOL",
     "LPAREN",
     "RPAREN",
+    "LCURLY",
+    "RCURLY",
     "WRITE",
     "READ",
     "STRING",
@@ -60,6 +63,8 @@ t_RPAREN = r"\)"
 t_SEMICOLON = r";"
 t_ASSIGNMENT = r"="
 t_NEG = r"!"
+t_LCURLY = r"{"
+t_RCURLY = r"}"
 
 
 reserved = {
@@ -161,6 +166,18 @@ def p_instruction(p):
     | read SEMICOLON"""
     p[0] = p[1]
 
+def p_instruction_if(p):
+    """instruction : IF LPAREN expression RPAREN LCURLY lines RCURLY """
+    node = If(p.lineno(1), p[3])
+    node.left = p[6]
+    p[0] = node
+
+def p_instruction_if_else(p):
+    """instruction : IF LPAREN expression RPAREN LCURLY lines RCURLY ELSE LCURLY lines RCURLY """
+    node = If(p.lineno(1), p[3])
+    node.left = p[6]
+    node.right = p[10]
+    p[0] = node
 
 def p_instruction_assignment_exp(p):
     """instruction : ID ASSIGNMENT expression SEMICOLON"""
