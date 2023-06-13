@@ -94,12 +94,14 @@ class AST:
         ProgramMemory.header_lines.append(f'@double = constant [ 4 x i8] c"%lf\\00"')
         ProgramMemory.header_lines.append(f'@True = constant [5 x i8 ] c"True\\00"')
         ProgramMemory.header_lines.append(f'@False = constant [6 x i8 ] c"False\\00"')
-        ProgramMemory.header_lines.append(f'@strps = constant [4 x i8] c\"%s\\0A\\00\"')
-        ProgramMemory.header_lines.append(f'@strs = constant [5 x i8] c\"%10s\\00\"')
+        ProgramMemory.header_lines.append(f'@strps = constant [4 x i8] c"%s\\0A\\00"')
+        ProgramMemory.header_lines.append(f'@strs = constant [5 x i8] c"%10s\\00"')
         ProgramMemory.header_lines.append(f"")
         ProgramMemory.header_lines.append(f"declare i32 @printf(i8*, ...)")
         ProgramMemory.header_lines.append(f"declare i32 @scanf(i8*, ...)")
-        ProgramMemory.header_lines.append(f"declare void @llvm.memcpy.p0i8.p0i8.i64(i8* noalias nocapture writeonly, i8* noalias nocapture readonly, i64, i1 immarg)")
+        ProgramMemory.header_lines.append(
+            f"declare void @llvm.memcpy.p0i8.p0i8.i64(i8* noalias nocapture writeonly, i8* noalias nocapture readonly, i64, i1 immarg)"
+        )
         ProgramMemory.header_lines.append(f"declare i64 @strlen(i8*)")
         ProgramMemory.header_lines.append(f"declare i8* @strcpy(i8*, i8*)")
         ProgramMemory.header_lines.append(f"declare i8* @strcat(i8*, i8*)")

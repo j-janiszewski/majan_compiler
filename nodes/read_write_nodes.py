@@ -1,5 +1,6 @@
 from .common import Instruction, Types, ProgramMemory
 
+
 class Write(Instruction):
     def __init__(self, line_no, value) -> None:
         super().__init__(line_no, value)
@@ -62,8 +63,8 @@ class Write(Instruction):
         if type == Types.String:
             # No need to load mem_id before, because we are printing from dispatched variable
             output_lines.append(
-                    f"%{ProgramMemory.mem_counter} = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strps, i32 0, i32 0), i8* %{mem_id})"
-                )
+                f"%{ProgramMemory.mem_counter} = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strps, i32 0, i32 0), i8* %{mem_id})"
+            )
         return 0
 
 
@@ -102,9 +103,7 @@ class Read(Instruction):
             )
             mem_str = ProgramMemory.mem_counter
             ProgramMemory.mem_counter += 1
-            output_lines.append(
-                f"%{ident_id} = alloca i8*"
-            )
+            output_lines.append(f"%{ident_id} = alloca i8*")
             output_lines.append(
                 f"%{ProgramMemory.mem_counter} = getelementptr inbounds [{ProgramMemory.buffer_size + 1} x i8], [{ProgramMemory.buffer_size + 1} x i8]* %{mem_str}, i64 0, i64 0"
             )
@@ -117,8 +116,8 @@ class Read(Instruction):
             )
             ProgramMemory.mem_counter += 1
             ProgramMemory.variables_dict[self.left.name] = (
-                        type,
-                        ProgramMemory.buffer_size,
-                        ident_id,
-                    )
+                type,
+                ProgramMemory.buffer_size,
+                ident_id,
+            )
         return 0
