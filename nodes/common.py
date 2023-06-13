@@ -12,14 +12,13 @@ class ProgramMemory(object):
 
     @classmethod
     def increment_and_read_mem(cls):
-        cls.mem_counter+=1
-        return cls.mem_counter-1
-    
+        cls.mem_counter += 1
+        return cls.mem_counter - 1
+
     @classmethod
     def increment_and_read_label(cls):
-        cls.labels_count+=1
-        return cls.labels_count-1
-        
+        cls.labels_count += 1
+        return cls.labels_count - 1
 
 
 class Types(Enum):
@@ -50,12 +49,12 @@ class Node:
 
 
 class Instruction(Node):
-    def write_llvm_if(self, val, first_case_label,second_case_label):
+    def write_llvm_if(self, val, first_case_label, second_case_label):
         return f"br i1 {val}, label %l{first_case_label}, label %l{second_case_label}"
-    
+
     def write_llvm_goto_label(self, label):
         return f"br label %l{label}"
-    
+
     def write_llvm_label(self, label):
         return f"l{label}:"
 
@@ -77,20 +76,18 @@ class Instructions(Node):
         for i, inst in enumerate(self.instructions):
             node_as_text += f" {indentation}{i}: {inst.__str__(indent_level)} \n"
         return node_as_text
-    
+
     def check_semantics(self, variables_dict):
         for node in self.instructions:
             semantic_check, _ = node.check_semantics(variables_dict)
             if semantic_check != 0:
                 return 1, ""
         return 0, ""
-    
+
     def write_code(self, output_lines: list):
         for node in self.instructions:
             node.write_code(output_lines)
         return 0
-    
-    
 
 
 class AST:
@@ -126,16 +123,17 @@ class AST:
         ProgramMemory.header_lines.append(f'@double = constant [ 4 x i8] c"%lf\\00"')
         ProgramMemory.header_lines.append(f'@True = constant [5 x i8 ] c"True\\00"')
         ProgramMemory.header_lines.append(f'@False = constant [6 x i8 ] c"False\\00"')
-        ProgramMemory.header_lines.append(f'@strps = constant [4 x i8] c\"%s\\0A\\00\"')
-        ProgramMemory.header_lines.append(f'@strs = constant [5 x i8] c\"%10s\\00\"')
+        ProgramMemory.header_lines.append(f'@strps = constant [4 x i8] c"%s\\0A\\00"')
+        ProgramMemory.header_lines.append(f'@strs = constant [5 x i8] c"%10s\\00"')
         ProgramMemory.header_lines.append(f"")
         ProgramMemory.header_lines.append(f"declare i32 @printf(i8*, ...)")
         ProgramMemory.header_lines.append(f"declare i32 @scanf(i8*, ...)")
-        ProgramMemory.header_lines.append(f"declare void @llvm.memcpy.p0i8.p0i8.i64(i8* noalias nocapture writeonly, i8* noalias nocapture readonly, i64, i1 immarg)")
+        ProgramMemory.header_lines.append(
+            f"declare void @llvm.memcpy.p0i8.p0i8.i64(i8* noalias nocapture writeonly, i8* noalias nocapture readonly, i64, i1 immarg)"
+        )
         ProgramMemory.header_lines.append(f"declare i64 @strlen(i8*)")
         ProgramMemory.header_lines.append(f"declare i8* @strcpy(i8*, i8*)")
         ProgramMemory.header_lines.append(f"declare i8* @strcat(i8*, i8*)")
-        ProgramMemory.header_lines.append(f"declare i32 @__isoc99_scanf(i8*, ...)")
         ProgramMemory.header_lines.append(f"")
         output_lines.append(
             f"define dso_local i32 @main() #0 {{"

@@ -1,5 +1,6 @@
 from .common import Instruction, Types, ProgramMemory
 
+
 class Write(Instruction):
     def __init__(self, line_no, value) -> None:
         super().__init__(line_no, value)
@@ -13,7 +14,7 @@ class Write(Instruction):
 
     def write_code(self, output_lines: list):
         type, mem_id, val = self.left.write_code(output_lines)
-        #TODO: REWRITE IT
+        # TODO: REWRITE IT
         if type == Types.Int:
             if val != "":
                 output_lines.append(
@@ -35,7 +36,7 @@ class Write(Instruction):
                 )
             ProgramMemory.mem_counter += 1
         if type == Types.Bool:
-            #TODO: REWRITE IT
+            # TODO: REWRITE IT
             then_label = ProgramMemory.labels_count
             else_label = ProgramMemory.labels_count + 1
             end_label = ProgramMemory.labels_count + 2
@@ -63,9 +64,10 @@ class Write(Instruction):
             output_lines.append(f"l{end_label}:")
         if type == Types.String:
             # No need to load mem_id before, because we are printing from dispatched variable
+            ProgramMemory.mem_counter += 1
             output_lines.append(
-                    f"%{ProgramMemory.mem_counter} = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strps, i32 0, i32 0), i8* %{mem_id})"
-                )
+                f"%{ProgramMemory.mem_counter} = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strps, i32 0, i32 0), i8* %{mem_id})"
+            )
         return 0
 
 
@@ -105,9 +107,6 @@ class Read(Instruction):
             mem_str = ProgramMemory.mem_counter
             ProgramMemory.mem_counter += 1
             output_lines.append(
-                f"%{ident_id} = alloca i8*"
-            )
-            output_lines.append(
                 f"%{ProgramMemory.mem_counter} = getelementptr inbounds [{ProgramMemory.buffer_size + 1} x i8], [{ProgramMemory.buffer_size + 1} x i8]* %{mem_str}, i64 0, i64 0"
             )
             ProgramMemory.mem_counter += 1
@@ -115,12 +114,12 @@ class Read(Instruction):
                 f"store i8* %{ProgramMemory.mem_counter - 1}, i8** %{ident_id}"
             )
             output_lines.append(
-                f"%{ProgramMemory.mem_counter} = call i32 (i8*, ...) @__isoc99_scanf(i8* getelementptr inbounds ([5 x i8], [5 x i8]* @strs, i32 0, i32 0), i8* %{ProgramMemory.mem_counter - 1})"
+                f"%{ProgramMemory.mem_counter} = call i32 (i8*, ...) @scanf(i8* getelementptr inbounds ([5 x i8], [5 x i8]* @strs, i32 0, i32 0), i8* %{ProgramMemory.mem_counter - 1})"
             )
             ProgramMemory.mem_counter += 1
             ProgramMemory.variables_dict[self.left.name] = (
-                        type,
-                        ProgramMemory.buffer_size,
-                        ident_id,
-                    )
+                type,
+                ProgramMemory.buffer_size,
+                ident_id,
+            )
         return 0
