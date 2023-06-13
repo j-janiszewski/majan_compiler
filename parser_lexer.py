@@ -49,10 +49,11 @@ tokens = (
     "OR",
     "XOR",
     "LENGTH",
-    "COMPARISON"
+    "COMPARISON",
 )
 
-t_COMPARISON =r"(>=)|(<=)|(==)|(>)|(<)"
+
+t_COMPARISON = r"(>=)|(<=)|(==)|(>)|(<)"
 t_PLUS = r"\+"
 t_MINUS = r"-"
 t_TIMES = r"\*"
@@ -90,11 +91,12 @@ precedence = (
     ("left", "TIMES", "DIVIDE"),
 )
 
-
+# fmt: off
 def t_STRING_VALUE(t):
     r"\"([^\"]*)\""
     t.value = t.value.strip('"')
     return t
+# fmt: on
 
 
 def t_ID(t):
@@ -336,5 +338,3 @@ def p_error(p):
 lexer = lex.lex()
 
 parser = yacc.yacc()
-
-
