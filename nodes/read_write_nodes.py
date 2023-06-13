@@ -13,6 +13,7 @@ class Write(Instruction):
 
     def write_code(self, output_lines: list):
         type, mem_id, val = self.left.write_code(output_lines)
+        #TODO: REWRITE IT
         if type == Types.Int:
             if val != "":
                 output_lines.append(
@@ -34,6 +35,7 @@ class Write(Instruction):
                 )
             ProgramMemory.mem_counter += 1
         if type == Types.Bool:
+            #TODO: REWRITE IT
             then_label = ProgramMemory.labels_count
             else_label = ProgramMemory.labels_count + 1
             end_label = ProgramMemory.labels_count + 2

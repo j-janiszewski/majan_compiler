@@ -1,14 +1,14 @@
 from .common import Instruction, Types, ProgramMemory, Node
 
 class Init(Node):
-    def __init__(self, line_no, variable_type) -> None:
-        super().__init__(line_no)
+    def __init__(self, line_no, variable_type, left = None) -> None:
+        super().__init__(line_no, left)
         self.variable_type = variable_type
         self.type = "init node"
 
     def __str__(self, indent_level=0):
         return super().__str__(indent_level, f"(type: {self.variable_type})")
-
+#TODO: store llvm function
 
 class Assign(Instruction):
     def __init__(self, line_no, left, right) -> None:
@@ -90,8 +90,8 @@ class Assign(Instruction):
         return var_type, var_mem_id, ""
 
 class Variable(Node):
-    def __init__(self, line_no, name, variable_type=None) -> None:
-        super().__init__(line_no)
+    def __init__(self, line_no, name, variable_type=None, left=None) -> None:
+        super().__init__(line_no, left)
         self.type = "variable"
         self.name = name
         self.variable_type = variable_type
@@ -108,50 +108,49 @@ class Variable(Node):
         )
 
     def write_init_code(self, output_lines):
+        #TODO: formatted string in 1 place
         if self.variable_type is Types.Int:
             output_lines.append(
-                f"%{ProgramMemory.mem_counter} = alloca i32, align 4"
+                f"%{ProgramMemory.increment_and_read_mem()} = alloca i32, align 4"
             )
-            ProgramMemory.mem_counter += 1
+
         elif self.variable_type is Types.Float:
             output_lines.append(
-                f"%{ProgramMemory.mem_counter} = alloca double, align 8"
+                f"%{ProgramMemory.increment_and_read_mem()} = alloca double, align 8"
             )
-            ProgramMemory.mem_counter += 1
+
         elif self.variable_type is Types.Bool:
             output_lines.append(
-                f"%{ProgramMemory.mem_counter} = alloca i1"
+                f"%{ProgramMemory.increment_and_read_mem()} = alloca i1"
             )
-            ProgramMemory.mem_counter += 1
         elif self.variable_type is Types.String:
             output_lines.append(
-                f"%{ProgramMemory.mem_counter} = alloca i8*"
+                f"%{ProgramMemory.increment_and_read_mem()} = alloca i8*"
             )
-            ProgramMemory.mem_counter += 1
         return
 
     def write_code(self, output_lines):
+        #TODO: formatted string in 1 place
         var_type, var_value, var_mem_id = ProgramMemory.variables_dict[self.name]
         if var_type is Types.Int:
             output_lines.append(
-                f"%{ProgramMemory.mem_counter} = load i32, i32* %{var_mem_id}, align 4"
+                f"%{ProgramMemory.increment_and_read_mem()} = load i32, i32* %{var_mem_id}, align 4"
             )
-            ProgramMemory.mem_counter += 1
         elif var_type is Types.Float:
             output_lines.append(
-                f"%{ProgramMemory.mem_counter} = load double, double* %{var_mem_id}, align 8"
+                f"%{ProgramMemory.increment_and_read_mem()} = load double, double* %{var_mem_id}, align 8"
             )
-            ProgramMemory.mem_counter += 1
+
         elif var_type is Types.Bool:
             output_lines.append(
-                f"%{ProgramMemory.mem_counter} = load i1, i1* %{var_mem_id}"
+                f"%{ProgramMemory.increment_and_read_mem()} = load i1, i1* %{var_mem_id}"
             )
-            ProgramMemory.mem_counter += 1
+
         elif var_type is Types.String:
             output_lines.append(
-                f"%{ProgramMemory.mem_counter} = load i8*, i8** %{var_mem_id}"
+                f"%{ProgramMemory.increment_and_read_mem()} = load i8*, i8** %{var_mem_id}"
             )
-            ProgramMemory.mem_counter += 1
+
             return var_type, ProgramMemory.mem_counter - 1, var_value
         return var_type, ProgramMemory.mem_counter - 1, ""
 
@@ -161,6 +160,7 @@ class Value(Node):
         super().__init__(line_no)
         self.type = "value"
         self.value = value
+        # decide about type based on value type...
         self.value_type = value_type
 
     def check_semantics(self, variables_dict):

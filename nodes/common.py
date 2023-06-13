@@ -10,6 +10,17 @@ class ProgramMemory(object):
     str_alias = 1
     buffer_size = 16
 
+    @classmethod
+    def increment_and_read_mem(cls):
+        cls.mem_counter+=1
+        return cls.mem_counter-1
+    
+    @classmethod
+    def increment_and_read_label(cls):
+        cls.labels_count+=1
+        return cls.labels_count-1
+        
+
 
 class Types(Enum):
     Int = "int"
@@ -39,7 +50,14 @@ class Node:
 
 
 class Instruction(Node):
-    pass
+    def write_llvm_if(self, val, first_case_label,second_case_label):
+        return f"br i1 {val}, label %l{first_case_label}, label %l{second_case_label}"
+    
+    def write_llvm_goto_label(self, label):
+        return f"br label %l{label}"
+    
+    def write_llvm_label(self, label):
+        return f"l{label}:"
 
 
 class Instructions(Node):
@@ -59,7 +77,7 @@ class Instructions(Node):
         for i, inst in enumerate(self.instructions):
             node_as_text += f" {indentation}{i}: {inst.__str__(indent_level)} \n"
         return node_as_text
-
+    
     def check_semantics(self, variables_dict):
         for node in self.instructions:
             semantic_check, _ = node.check_semantics(variables_dict)
@@ -71,6 +89,8 @@ class Instructions(Node):
         for node in self.instructions:
             node.write_code(output_lines)
         return 0
+    
+    
 
 
 class AST:

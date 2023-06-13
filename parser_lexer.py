@@ -140,7 +140,6 @@ def t_error(t):
 
 start = "program"
 
-
 def p_program(p):
     "program : lines"
     p[0] = p[1]
@@ -169,16 +168,11 @@ def p_instruction(p):
 
 def p_instruction_if(p):
     """instruction : IF LPAREN expression RPAREN LCURLY lines RCURLY """
-    node = If(p.lineno(1), p[3])
-    node.left = p[6]
-    p[0] = node
+    p[0] = If(p.lineno(1), p[3], p[6])
 
 def p_instruction_if_else(p):
     """instruction : IF LPAREN expression RPAREN LCURLY lines RCURLY ELSE LCURLY lines RCURLY """
-    node = If(p.lineno(1), p[3])
-    node.left = p[6]
-    node.right = p[10]
-    p[0] = node
+    p[0] = If(p.lineno(1), p[3], p[6], p[10])
 
 def p_instruction_while(p):
     """instruction : WHILE LPAREN expression RPAREN LCURLY lines RCURLY """
@@ -186,16 +180,14 @@ def p_instruction_while(p):
 
 def p_instruction_assignment_exp(p):
     """instruction : ID ASSIGNMENT expression SEMICOLON"""
-    node = Assign(p.lineno(1), Variable(p.lineno(2), p[1]), p[3])
-    p[0] = node
+    p[0] = Assign(p.lineno(1), Variable(p.lineno(2), p[1]), p[3])
 
 
 def p_instruction_assignment_string(p):
     """instruction : ID ASSIGNMENT STRING_VALUE SEMICOLON"""
-    node = Assign(
+    p[0] = Assign(
         p.lineno(1), Variable(p.lineno(2), p[1]), StringValue(p.lineno(3), p[3])
     )
-    p[0] = node
 
 
 def p_expression_binop(p):
@@ -243,9 +235,7 @@ def p_expression_bool_value(p):
 
 def p_expression_int_vars_init(p):
     "init : INT int_ids"
-    init_node = Init(p.lineno(1), Types.Int)
-    init_node.left = p[2]
-    p[0] = init_node
+    p[0] = Init(p.lineno(1), Types.Int , p[2])
 
 
 def p_int_id_single(p):
@@ -255,16 +245,12 @@ def p_int_id_single(p):
 
 def p_int_ids(p):
     """int_ids : int_ids COMMA ID"""
-    node = Variable(p.lineno(3), p[3], Types.Int)
-    node.left = p[1]
-    p[0] = node
+    p[0] = Variable(p.lineno(3), p[3], Types.Int, p[1])
 
 
 def p_expression_float_vars_init(p):
     "init : FLOAT float_ids"
-    init_node = Init(p.lineno(1), Types.Float)
-    init_node.left = p[2]
-    p[0] = init_node
+    p[0] = Init(p.lineno(1), Types.Float , p[2])
 
 
 def p_float_id_single(p):
@@ -274,16 +260,12 @@ def p_float_id_single(p):
 
 def p_float_ids(p):
     """float_ids : float_ids COMMA ID"""
-    node = Variable(p.lineno(3), p[3], Types.Float)
-    node.left = p[1]
-    p[0] = node
+    p[0] = Variable(p.lineno(3), p[3], Types.Float, p[1])
 
 
 def p_expression_bool_vars_init(p):
     "init : BOOL bool_ids"
-    init_node = Init(p.lineno(1), Types.Bool)
-    init_node.left = p[2]
-    p[0] = init_node
+    p[0] = Init(p.lineno(1), Types.Bool , p[2])
 
 
 def p_bool_id_single(p):
@@ -293,9 +275,7 @@ def p_bool_id_single(p):
 
 def p_bool_ids(p):
     """bool_ids : bool_ids COMMA ID"""
-    node = Variable(p.lineno(3), p[3], Types.Bool)
-    node.left = p[1]
-    p[0] = node
+    p[0] = Variable(p.lineno(3), p[3], Types.Bool, p[1])
 
 
 def p_expression_write(p):
@@ -315,9 +295,7 @@ def p_expression_length(p):
 
 def p_expression_string_vars_init(p):
     "init : STRING string_ids"
-    init_node = Init(p.lineno(1), Types.String)
-    init_node.left = p[2]
-    p[0] = init_node
+    p[0] = Init(p.lineno(1), Types.String , p[2])
 
 
 def p_string_id_single(p):
@@ -327,9 +305,7 @@ def p_string_id_single(p):
 
 def p_string_ids(p):
     """string_ids : string_ids COMMA ID"""
-    node = Variable(p.lineno(3), p[3], Types.String)
-    node.left = p[1]
-    p[0] = node
+    p[0] = Variable(p.lineno(3), p[3], Types.String, p[1])
 
 
 def p_error(p):

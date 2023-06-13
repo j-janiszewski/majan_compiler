@@ -29,28 +29,27 @@ class While(Instruction):
         return 0, ""
     
     def write_code(self, output_lines: list):
-        cond_label = ProgramMemory.labels_count
-        loop_label = ProgramMemory.labels_count+1
-        end_label = ProgramMemory.labels_count+2
-        ProgramMemory.labels_count+=3
-        output_lines.append(f"br label %l{cond_label}")
-        output_lines.append(f"l{cond_label}:")
+        cond_label = ProgramMemory.increment_and_read_label()
+        loop_label = ProgramMemory.increment_and_read_label()
+        end_label = ProgramMemory.increment_and_read_label()
+        output_lines.append(self.write_llvm_goto_label(cond_label))
+        output_lines.append(self.write_llvm_label(cond_label))
         _, cond_mem_id, cond_val = self.condition.write_code(output_lines)
         if cond_val!="":
             output_lines.append(f"br i1 {cond_val}, label %l{loop_label}, label %l{end_label}")
         else:
             output_lines.append(f"br i1 %{cond_mem_id}, label %l{loop_label}, label %l{end_label}")
-        output_lines.append(f"l{loop_label}:")
+        output_lines.append(self.write_llvm_label(loop_label))
         self.left.write_code(output_lines)
-        output_lines.append(f"br label %l{cond_label}")
-        output_lines.append(f"l{end_label}:")
+        output_lines.append(self.write_llvm_goto_label(cond_label) )
+        output_lines.append(self.write_llvm_label(end_label))
         return 0
 
 
 
 class If(Instruction):
-    def __init__(self, line_no, condition ) -> None:
-        super().__init__(line_no)
+    def __init__(self, line_no, condition, left, right =None) -> None:
+        super().__init__(line_no, left, right)
         self.condition = condition
         self.type = "if node"
 
@@ -85,32 +84,30 @@ class If(Instruction):
     
     def write_code(self, output_lines: list):
         _, cond_mem_id, cond_val = self.condition.write_code(output_lines)
-        then_label = ProgramMemory.labels_count
+        then_label = ProgramMemory.increment_and_read_label()
         if self.right:
-            else_label = ProgramMemory.labels_count+1
-            end_label = ProgramMemory.labels_count+2
-            ProgramMemory.labels_count+=3
+            else_label = ProgramMemory.increment_and_read_label()
+            end_label = ProgramMemory.increment_and_read_label()
             if cond_val!="":
                 output_lines.append(f"br i1 {cond_val}, label %l{then_label}, label %l{else_label}")
             else:
                 output_lines.append(f"br i1 %{cond_mem_id}, label %l{then_label}, label %l{else_label}")
-            output_lines.append(f"l{then_label}:")
+            output_lines.append(self.write_llvm_label(then_label))
             self.left.write_code(output_lines)
-            output_lines.append(f"br label %l{end_label}")
-            output_lines.append(f"l{else_label}:")
+            output_lines.append(self.write_llvm_goto_label(end_label) )
+            output_lines.append(self.write_llvm_label(else_label))
             self.right.write_code(output_lines)
         else:
-            end_label = ProgramMemory.labels_count+1
-            ProgramMemory.labels_count+=2
+            end_label = ProgramMemory.increment_and_read_label()
             if cond_val!="":
                 output_lines.append(f"br i1 {cond_val}, label %l{then_label}, label %l{end_label}")
             else:
                 output_lines.append(f"br i1 %{cond_mem_id}, label %l{then_label}, label %l{end_label}")
-            output_lines.append(f"l{then_label}:")
+            output_lines.append(self.write_llvm_label(then_label))
             self.left.write_code(output_lines)
 
-        output_lines.append(f"br label %l{end_label}")
-        output_lines.append(f"l{end_label}:")
+        output_lines.append(self.write_llvm_goto_label(end_label) )
+        output_lines.append(self.write_llvm_label(end_label))
         return 0
 
 

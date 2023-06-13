@@ -14,7 +14,7 @@ else:
 
     a=2;
    
-   while (a<10){
+   while (!(a==10)){
    write(a);
    write(true);
    a = a+ 1;
