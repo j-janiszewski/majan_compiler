@@ -12,20 +12,22 @@ else:
     data = """
     int a, b, c;
     float d;
+    string s;
+    read(s);
+    bool num;
     d=76.5;
-    a=6;
+    a=70;
     b=7;
-    write(a <=(b + 5));
-    string a, b;
-    int x, y;
-    read(b);
-    x = 1;
-    a = "IS";
-    y = 2;
-    write(b);
-    read(b);
-    write(b);
-    write(x + y);
+    if(a <=(b + 5)) {
+    write(6);
+    b*5;
+
+    } else {
+    write(2);
+    write(s);
+    }
+   
+    
     """
 result = parser.parse(data)
 
