@@ -11,12 +11,17 @@ if len(sys.argv) > 1:
 else:
     data = """
     int a, b, c;
-
+    b=7;
     a=2;
    
    while (!(a==10)){
    write(a);
-   write(true);
+
+   if(b>=a){
+   write(b>=a);
+   } else{
+   write(b>=a);
+   }
    true xor false;
    a = a+ 1;
    }
