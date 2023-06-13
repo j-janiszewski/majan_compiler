@@ -14,6 +14,7 @@ from nodes import (
     Read,
     StringValue,
     UnOp,
+    Length,
 )
 
 tokens = (
@@ -44,6 +45,7 @@ tokens = (
     "AND",
     "OR",
     "XOR",
+    "LENGTH"
 )
 
 
@@ -73,6 +75,7 @@ reserved = {
     "and": "AND",
     "or": "OR",
     "xor": "XOR",
+    "length": "LENGTH",
 }
 
 precedence = (
@@ -278,6 +281,11 @@ def p_expression_write(p):
 def p_expression_read(p):
     "read : READ LPAREN ID RPAREN"
     p[0] = Read(p.lineno(3), Variable(p.lineno(3), p[3]))
+
+
+def p_expression_length(p):
+    "expression : LENGTH LPAREN ID RPAREN"
+    p[0] = Length(p.lineno(3), Variable(p.lineno(3), p[3]))
 
 
 def p_expression_string_vars_init(p):
