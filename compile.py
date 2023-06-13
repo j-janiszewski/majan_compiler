@@ -5,11 +5,17 @@ from nodes import AST
 from parser_lexer import parser
 import sys
 
-if len(sys.argv) >1:
-    with open(sys.argv[1],"r") as f:
+if len(sys.argv) > 1:
+    with open(sys.argv[1], "r") as f:
         data = f.read()
 else:
     data = """
+    int a, b, c;
+    float d;
+    d=76.5;
+    a=6;
+    b=7;
+    write(a <=(b + 5));
     string a, b;
     int x, y;
     read(b);
@@ -21,7 +27,6 @@ else:
     write(b);
     write(x + y);
     """
-
 result = parser.parse(data)
 
 print(result)

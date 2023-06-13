@@ -45,10 +45,12 @@ tokens = (
     "AND",
     "OR",
     "XOR",
-    "LENGTH"
+    "LENGTH",
+    "COMPARISON",
 )
 
 
+t_COMPARISON = r"(>=)|(<=)|(==)|(>)|(<)"
 t_PLUS = r"\+"
 t_MINUS = r"-"
 t_TIMES = r"\*"
@@ -59,6 +61,7 @@ t_RPAREN = r"\)"
 t_SEMICOLON = r";"
 t_ASSIGNMENT = r"="
 t_NEG = r"!"
+
 
 reserved = {
     "if": "IF",
@@ -83,11 +86,12 @@ precedence = (
     ("left", "TIMES", "DIVIDE"),
 )
 
-
+# fmt: off
 def t_STRING_VALUE(t):
     r"\"([^\"]*)\""
     t.value = t.value.strip('"')
     return t
+# fmt: on
 
 
 def t_ID(t):
@@ -181,7 +185,8 @@ def p_expression_binop(p):
     | expression DIVIDE expression
     | expression AND expression
     | expression OR expression
-    | expression XOR expression"""
+    | expression XOR expression
+    | expression COMPARISON expression"""
 
     p[0] = BinOp(p.lineno(2), p[1], p[2], p[3])
 
@@ -316,5 +321,3 @@ def p_error(p):
 lexer = lex.lex()
 
 parser = yacc.yacc()
-
-
