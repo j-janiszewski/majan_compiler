@@ -156,7 +156,6 @@ class Value(Node):
         super().__init__(line_no)
         self.type = "value"
         self.value = value
-        # decide about type based on value type...
         self.value_type = value_type
 
     def check_semantics(self, variables_dict):

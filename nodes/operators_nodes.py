@@ -276,24 +276,29 @@ class BinOp(Instruction):
             args_type = "i32"
             prefix = "i"
         operation = self.comparison_llvm_operators[(self.op, prefix)]
-        # TODO same as sitofp
+        cmp_operation = (
+            f"%{ProgramMemory.increment_and_read_mem()} = {prefix}cmp {operation} {args_type} "
+            + "{left_val} , {right_val}"
+        )
+
         if right_val != "" and left_val != "":
             output_lines.append(
-                f"%{ProgramMemory.mem_counter} = {prefix}cmp {operation} {args_type} {left_val} , {right_val}"
+                cmp_operation.format(left_val=left_val, right_val=right_val)
             )
         elif right_val != "":
             output_lines.append(
-                f"%{ProgramMemory.mem_counter} = {prefix}cmp {operation} {args_type} %{left_mem_id} , {right_val}"
+                cmp_operation.format(left_val=f"%{left_mem_id}", right_val=right_val)
             )
         elif left_val != "":
             output_lines.append(
-                f"%{ProgramMemory.mem_counter} = {prefix}cmp {operation} {args_type} {left_val} , %{right_mem_id}"
+                cmp_operation.format(left_val=left_val, right_val=f"%{right_mem_id}")
             )
         else:
             output_lines.append(
-                f"%{ProgramMemory.mem_counter} = {prefix}cmp {operation} {args_type} %{left_mem_id} , %{right_mem_id}"
+                cmp_operation.format(
+                    left_val=f"%{left_mem_id}", right_val=f"%{right_mem_id}"
+                )
             )
-        ProgramMemory.mem_counter += 1
         return Types.Bool, ProgramMemory.mem_counter - 1, ""
 
     def write_code(self, output_lines: list):
@@ -329,10 +334,13 @@ class UnOp(Instruction):
     def write_code(self, output_lines: list):
         _, mem_id, val = self.left.write_code(output_lines)
         if val != "":
-            output_lines.append(f"%{ProgramMemory.mem_counter} = xor i1 {val}, 1")
+            output_lines.append(
+                f"%{ProgramMemory.increment_and_read_mem()} = xor i1 {val}, 1"
+            )
         else:
-            output_lines.append(f"%{ProgramMemory.mem_counter} = xor i1 %{mem_id}, 1")
-        ProgramMemory.mem_counter += 1
+            output_lines.append(
+                f"%{ProgramMemory.increment_and_read_mem()} = xor i1 %{mem_id}, 1"
+            )
         return Types.Bool, ProgramMemory.mem_counter - 1, ""
 
 
