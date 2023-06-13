@@ -1,14 +1,15 @@
 from .common import Instruction, Types, ProgramMemory, Node
 
+
 class Init(Node):
-    def __init__(self, line_no, variable_type, left = None) -> None:
+    def __init__(self, line_no, variable_type, left=None) -> None:
         super().__init__(line_no, left)
         self.variable_type = variable_type
         self.type = "init node"
 
     def __str__(self, indent_level=0):
         return super().__str__(indent_level, f"(type: {self.variable_type})")
-#TODO: store llvm function
+
 
 class Assign(Instruction):
     def __init__(self, line_no, left, right) -> None:
@@ -34,10 +35,10 @@ class Assign(Instruction):
 
     def __str__(self, indent_level=0):
         return super().__str__(indent_level)
-    
+
     def write_code(self, output_lines):
         var_type, var_value, var_mem_id = ProgramMemory.variables_dict[self.left.name]
-        right_type, right_mem_id, right_value = self.right.write_code(output_lines)    
+        right_type, right_mem_id, right_value = self.right.write_code(output_lines)
         if var_type is Types.Int:
             if right_value != "":
                 output_lines.append(
@@ -70,24 +71,21 @@ class Assign(Instruction):
                 )
         if var_type is Types.Bool:
             if right_value != "":
-                output_lines.append(
-                    f"store i1 {right_value}, i1* %{var_mem_id}"
-                )
+                output_lines.append(f"store i1 {right_value}, i1* %{var_mem_id}")
             else:
-                output_lines.append(
-                    f"store i1 %{right_mem_id}, i1* %{var_mem_id}"
-                )
+                output_lines.append(f"store i1 %{right_mem_id}, i1* %{var_mem_id}")
         if var_type is Types.String:
             if right_value != "":
-                output_lines.append(    # TODO not sure if we can use mem_counter here or should dereference right_mem_id
+                output_lines.append(  # TODO not sure if we can use mem_counter here or should dereference right_mem_id
                     f"store i8* %{ProgramMemory.mem_counter - 1}, i8** %{var_mem_id}"
                 )
                 ProgramMemory.variables_dict[self.left.name] = (
-                        var_type,
-                        right_value,
-                        var_mem_id,
-                    )
+                    var_type,
+                    right_value,
+                    var_mem_id,
+                )
         return var_type, var_mem_id, ""
+
 
 class Variable(Node):
     def __init__(self, line_no, name, variable_type=None, left=None) -> None:
@@ -108,7 +106,7 @@ class Variable(Node):
         )
 
     def write_init_code(self, output_lines):
-        #TODO: formatted string in 1 place
+        # TODO: formatted string in 1 place
         if self.variable_type is Types.Int:
             output_lines.append(
                 f"%{ProgramMemory.increment_and_read_mem()} = alloca i32, align 4"
@@ -130,7 +128,7 @@ class Variable(Node):
         return
 
     def write_code(self, output_lines):
-        #TODO: formatted string in 1 place
+        # TODO: formatted string in 1 place
         var_type, var_value, var_mem_id = ProgramMemory.variables_dict[self.name]
         if var_type is Types.Int:
             output_lines.append(
@@ -201,10 +199,8 @@ class StringValue(Value):
         n = f"{self.alias}"
         ProgramMemory.header_lines.append(
             f'@{n} = private constant [{l} x i8] c"{self.value}\\00"'
-        )   
-        output_lines.append(
-            f"%{n} = alloca [{l+1} x i8]"
         )
+        output_lines.append(f"%{n} = alloca [{l+1} x i8]")
         output_lines.append(
             f"%{ProgramMemory.mem_counter} = bitcast [{l} x i8]* %{n} to i8*"
         )
@@ -212,14 +208,10 @@ class StringValue(Value):
             f"call void @llvm.memcpy.p0i8.p0i8.i64(i8* align 1 %{ProgramMemory.mem_counter}, i8* align 1 getelementptr inbounds ([{l} x i8], [{l} x i8]* @{n}, i32 0, i32 0), i64 {l}, i1 false)"
         )
         ProgramMemory.mem_counter += 1
-        output_lines.append(
-            f"%ptr{n} = alloca i8*"
-        )
+        output_lines.append(f"%ptr{n} = alloca i8*")
         output_lines.append(
             f"%{ProgramMemory.mem_counter} = getelementptr inbounds [{l} x i8], [{l} x i8]* %{n}, i64 0, i64 0"
         )
         ProgramMemory.mem_counter += 1
-        output_lines.append(
-            f"store i8* %{ProgramMemory.mem_counter - 1}, i8** %ptr{n}"
-        )
-        return self.value_type, f"%ptr{n}", l-1
+        output_lines.append(f"store i8* %{ProgramMemory.mem_counter - 1}, i8** %ptr{n}")
+        return self.value_type, f"%ptr{n}", l - 1

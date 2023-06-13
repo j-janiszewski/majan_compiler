@@ -14,7 +14,6 @@ class Write(Instruction):
 
     def write_code(self, output_lines: list):
         type, mem_id, val = self.left.write_code(output_lines)
-        # TODO: REWRITE IT
         if type == Types.Int:
             if val != "":
                 output_lines.append(
@@ -36,32 +35,26 @@ class Write(Instruction):
                 )
             ProgramMemory.mem_counter += 1
         if type == Types.Bool:
-            # TODO: REWRITE IT
-            then_label = ProgramMemory.labels_count
-            else_label = ProgramMemory.labels_count + 1
-            end_label = ProgramMemory.labels_count + 2
-            ProgramMemory.labels_count += 3
+            then_label = ProgramMemory.increment_and_read_label()
+            else_label = ProgramMemory.increment_and_read_label()
+            end_label = ProgramMemory.increment_and_read_label()
             if val != "":
-                output_lines.append(
-                    f"br i1 {val}, label %l{then_label}, label %l{else_label}"
-                )
+                self.write_llvm_if(output_lines, val, then_label, else_label)
             else:
-                output_lines.append(
-                    f"br i1 %{mem_id}, label %l{then_label}, label %l{else_label}"
-                )
-            output_lines.append(f"l{then_label}:")
+                self.write_llvm_if(output_lines, f"%{mem_id}", then_label, else_label)
+            self.write_llvm_label(output_lines, then_label)
             output_lines.append(
                 "call i32(i8*, ...) @printf(i8* bitcast([5 x i8]* @True   to i8 *), i32 5)"
             )
             ProgramMemory.mem_counter += 1
-            output_lines.append(f"br label %l{end_label}")
-            output_lines.append(f"l{else_label}:")
+            self.write_llvm_goto_label(output_lines, end_label)
+            self.write_llvm_label(output_lines, else_label)
             output_lines.append(
                 "call i32(i8*, ...) @printf(i8* bitcast([6 x i8]* @False   to i8 *), i32 5)"
             )
             ProgramMemory.mem_counter += 1
-            output_lines.append(f"br label %l{end_label}")
-            output_lines.append(f"l{end_label}:")
+            self.write_llvm_goto_label(output_lines, end_label)
+            self.write_llvm_label(output_lines, end_label)
         if type == Types.String:
             # No need to load mem_id before, because we are printing from dispatched variable
             ProgramMemory.mem_counter += 1

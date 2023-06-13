@@ -49,14 +49,18 @@ class Node:
 
 
 class Instruction(Node):
-    def write_llvm_if(self, val, first_case_label, second_case_label):
-        return f"br i1 {val}, label %l{first_case_label}, label %l{second_case_label}"
+    def write_llvm_if(
+        self, output_lines: list, val, first_case_label, second_case_label
+    ):
+        output_lines.append(
+            f"br i1 {val}, label %l{first_case_label}, label %l{second_case_label}"
+        )
 
-    def write_llvm_goto_label(self, label):
-        return f"br label %l{label}"
+    def write_llvm_goto_label(self, output_lines: list, label):
+        output_lines.append(f"br label %l{label}")
 
-    def write_llvm_label(self, label):
-        return f"l{label}:"
+    def write_llvm_label(self, output_lines: list, label):
+        output_lines.append(f"l{label}:")
 
 
 class Instructions(Node):
