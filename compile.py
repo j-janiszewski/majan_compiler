@@ -16,15 +16,23 @@ else:
     a=6;
     b=7;
     write(a <=(b + 5));
-   
-    
+    string a, b;
+    int x, y;
+    read(b);
+    x = 1;
+    a = "IS";
+    y = 2;
+    write(b);
+    read(b);
+    write(b);
+    write(x + y);
     """
 result = parser.parse(data)
 
 print(result)
 
 ast = AST(result)
-# print(ast)
+
 ast.check_semantic_errors()
 
 ast.create_llvm_output("output")
