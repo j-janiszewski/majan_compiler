@@ -12,6 +12,8 @@ else:
     data = """
     int a, b, c;
     float d;
+    string s;
+    read(s);
     bool num;
     d=76.5;
     a=70;
@@ -22,6 +24,7 @@ else:
 
     } else {
     write(2);
+    write(s);
     }
    
     

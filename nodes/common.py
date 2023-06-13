@@ -66,7 +66,7 @@ class Instructions(Node):
             if semantic_check != 0:
                 return 1, ""
         return 0, ""
-    
+
     def write_code(self, output_lines: list):
         for node in self.instructions:
             node.write_code(output_lines)
@@ -117,7 +117,6 @@ class AST:
         ProgramMemory.header_lines.append(f"declare i64 @strlen(i8*)")
         ProgramMemory.header_lines.append(f"declare i8* @strcpy(i8*, i8*)")
         ProgramMemory.header_lines.append(f"declare i8* @strcat(i8*, i8*)")
-        ProgramMemory.header_lines.append(f"declare i32 @__isoc99_scanf(i8*, ...)")
         ProgramMemory.header_lines.append(f"")
         output_lines.append(
             f"define dso_local i32 @main() #0 {{"
