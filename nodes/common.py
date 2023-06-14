@@ -13,7 +13,6 @@ class ProgramMemory(object):
 
     global_var = True
     global_counter = 1
-    local_counter = 1
 
 
 class Types(Enum):
@@ -146,7 +145,7 @@ class AST:
                         ProgramMemory.local_var_dict[next.name] = (
                             var_type,
                             0,
-                            ProgramMemory.local_counter,
+                            ProgramMemory.mem_counter,
                         )
                     next.write_init_code(output_lines)
                     next = next.left

@@ -72,13 +72,23 @@ class Assign(Instruction):
                 right_mem_id = ProgramMemory.mem_counter
                 ProgramMemory.mem_counter += 1
             if right_value != "":
-                output_lines.append(
-                    f"store double {right_value}, double* %{var_mem_id}, align 8"
-                )
+                if self.left.name in ProgramMemory.local_var_dict:
+                    output_lines.append(
+                        f"store double {right_value}, double* %{var_mem_id}, align 8"
+                    )
+                elif self.left.name in ProgramMemory.variables_dict:
+                    output_lines.append(
+                        f"store double {right_value}, double* @g{var_mem_id}, align 8"
+                    )
             else:
-                output_lines.append(
-                    f"store double %{right_mem_id}, double* %{var_mem_id}, align 8"
-                )
+                if self.left.name in ProgramMemory.local_var_dict:
+                    output_lines.append(
+                        f"store double %{right_mem_id}, double* %{var_mem_id}, align 8"
+                    )
+                elif self.left.name in ProgramMemory.variables_dict:
+                    output_lines.append(
+                        f"store double %{right_mem_id}, double* @g{var_mem_id}, align 8"
+                    )
         if var_type is Types.Bool:
             if right_value != "":
                 output_lines.append(f"store i1 {right_value}, i1* %{var_mem_id}")
@@ -121,13 +131,15 @@ class Variable(Node):
                 ProgramMemory.header_lines.append(f"@g{ProgramMemory.global_counter} = global i32 0")
                 ProgramMemory.global_counter += 1
             else:
-                output_lines.append(f"%{ProgramMemory.local_counter} = alloca i32, align 4")
-                ProgramMemory.local_counter += 1
+                output_lines.append(f"%{ProgramMemory.mem_counter} = alloca i32, align 4")
+                ProgramMemory.mem_counter += 1
         elif self.variable_type is Types.Float:
-            output_lines.append(
-                f"%{ProgramMemory.mem_counter} = alloca double, align 8"
-            )
-            ProgramMemory.mem_counter += 1
+            if(ProgramMemory.global_var):
+                ProgramMemory.header_lines.append(f"@g{ProgramMemory.global_counter} = global double 0")
+                ProgramMemory.global_counter += 1
+            else:
+                output_lines.append(f"%{ProgramMemory.mem_counter} = alloca double, align 8")
+                ProgramMemory.mem_counter += 1
         elif self.variable_type is Types.Bool:
             output_lines.append(f"%{ProgramMemory.mem_counter} = alloca i1")
             ProgramMemory.mem_counter += 1
@@ -149,9 +161,14 @@ class Variable(Node):
                 )
             ProgramMemory.mem_counter += 1
         elif var_type is Types.Float:
-            output_lines.append(
-                f"%{ProgramMemory.mem_counter} = load double, double* %{var_mem_id}, align 8"
-            )
+            if self.name in ProgramMemory.local_var_dict:
+                output_lines.append(
+                    f"%{ProgramMemory.mem_counter} = load double, double* %{var_mem_id}, align 8"
+                )
+            elif self.name in ProgramMemory.variables_dict:
+                output_lines.append(
+                    f"%{ProgramMemory.mem_counter} = load double, double* @g{var_mem_id}, align 8"
+                )
             ProgramMemory.mem_counter += 1
         elif var_type is Types.Bool:
             output_lines.append(
