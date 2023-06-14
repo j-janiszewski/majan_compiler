@@ -7,12 +7,15 @@ class ProgramMemory(object):
     labels_count = 1
     variables_dict = dict()
     local_var_dict = dict()
+    function_dict = dict()
     header_lines = []
     str_alias = 1
     buffer_size = 16
 
     global_var = True
     global_counter = 1
+    temp_mem_id = 1
+    buffer = []
 
 
 class Types(Enum):
@@ -149,6 +152,13 @@ class AST:
                         )
                     next.write_init_code(output_lines)
                     next = next.left
+            elif node.type == "function node":
+                ProgramMemory.function_dict[node.name] = (
+                            node.return_type,
+                            0,
+                            -1,
+                        )
+                node.write_code(output_lines)
             elif isinstance(node, Instruction):
                 node.write_code(output_lines)
 

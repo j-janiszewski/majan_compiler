@@ -67,5 +67,21 @@ class If(Instruction):
         return 0
 
 
+class Function(Instruction):
+    def __init__(self, line_no, name, return_type) -> None:
+        super().__init__(line_no)
+        self.name = name
+        self.return_type = return_type
+        self.type = "function node"
 
+    def write_code(self, output_lines: list):
+        ProgramMemory.global_var = False
+
+
+
+        output_lines.extend(ProgramMemory.buffer) # TODO check how works
+        ProgramMemory.global_var = True
+        ProgramMemory.temp_mem_id = 1
+        ProgramMemory.buffer = []
+        return 0
     
