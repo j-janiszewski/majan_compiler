@@ -6,9 +6,14 @@ class ProgramMemory(object):
     mem_counter = 1
     labels_count = 1
     variables_dict = dict()
+    local_var_dict = dict()
     header_lines = []
     str_alias = 1
     buffer_size = 16
+
+    global_var = True
+    global_counter = 1
+    local_counter = 1
 
 
 class Types(Enum):
@@ -101,7 +106,6 @@ class AST:
 
     def create_llvm_output(self, filename):
         output_lines = []
-        # TODO Check if everything below is needed
         ProgramMemory.header_lines.append(f'@int = constant [ 3 x i8] c"%d\\00"')
         ProgramMemory.header_lines.append(f'@double = constant [ 4 x i8] c"%lf\\00"')
         ProgramMemory.header_lines.append(f'@True = constant [5 x i8 ] c"True\\00"')
@@ -118,6 +122,7 @@ class AST:
         ProgramMemory.header_lines.append(f"declare i8* @strcpy(i8*, i8*)")
         ProgramMemory.header_lines.append(f"declare i8* @strcat(i8*, i8*)")
         ProgramMemory.header_lines.append(f"")
+        ProgramMemory.global_var = True
         output_lines.append(
             f"define dso_local i32 @main() #0 {{"
         )  # TODO do we really need dso_local param?
@@ -131,11 +136,18 @@ class AST:
                 var_type = node.variable_type
                 next = node.left
                 while next:
-                    ProgramMemory.variables_dict[next.name] = (
-                        var_type,
-                        0,
-                        ProgramMemory.mem_counter,
-                    )
+                    if(ProgramMemory.global_var):
+                        ProgramMemory.variables_dict[next.name] = (
+                            var_type,
+                            0,
+                            ProgramMemory.global_counter,
+                        )
+                    else:
+                        ProgramMemory.local_var_dict[next.name] = (
+                            var_type,
+                            0,
+                            ProgramMemory.local_counter,
+                        )
                     next.write_init_code(output_lines)
                     next = next.left
             elif isinstance(node, Instruction):

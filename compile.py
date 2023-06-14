@@ -10,24 +10,10 @@ if len(sys.argv) > 1:
         data = f.read()
 else:
     data = """
-    int a, b, c;
-    float d;
-    string s;
-    read(s);
-    bool num;
-    d=76.5;
-    a=70;
-    b=7;
-    if(a <=(b + 5)) {
-    write(6);
-    b*5;
-
-    } else {
-    write(2);
-    write(s);
-    }
-   
-    
+    int a, b;
+    a = 5;
+    b = 2;
+    write(a+b);
     """
 result = parser.parse(data)
 

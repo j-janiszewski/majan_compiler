@@ -41,13 +41,23 @@ class Assign(Instruction):
         right_type, right_mem_id, right_value = self.right.write_code(output_lines)
         if var_type is Types.Int:
             if right_value != "":
-                output_lines.append(
-                    f"store i32 {right_value}, i32* %{var_mem_id}, align 4"
-                )
+                if self.left.name in ProgramMemory.local_var_dict:
+                    output_lines.append(
+                        f"store i32 {right_value}, i32* %{var_mem_id}, align 4"
+                    )
+                elif self.left.name in ProgramMemory.variables_dict:
+                    output_lines.append(
+                        f"store i32 {right_value}, i32* @g{var_mem_id}, align 4"
+                    )
             else:
-                output_lines.append(
-                    f"store i32 %{right_mem_id}, i32* %{var_mem_id}, align 4"
-                )
+                if self.left.name in ProgramMemory.local_var_dict:
+                    output_lines.append(
+                        f"store i32 %{right_mem_id}, i32* %{var_mem_id}, align 4"
+                    )
+                elif self.left.name in ProgramMemory.variables_dict:
+                    output_lines.append(
+                        f"store i32 %{right_mem_id}, i32* @g{var_mem_id}, align 4"
+                    )
         if var_type is Types.Float:
             if right_type is Types.Int:
                 if right_value != "":
@@ -107,8 +117,12 @@ class Variable(Node):
 
     def write_init_code(self, output_lines):
         if self.variable_type is Types.Int:
-            output_lines.append(f"%{ProgramMemory.mem_counter} = alloca i32, align 4")
-            ProgramMemory.mem_counter += 1
+            if(ProgramMemory.global_var):
+                ProgramMemory.header_lines.append(f"@g{ProgramMemory.global_counter} = global i32 0")
+                ProgramMemory.global_counter += 1
+            else:
+                output_lines.append(f"%{ProgramMemory.local_counter} = alloca i32, align 4")
+                ProgramMemory.local_counter += 1
         elif self.variable_type is Types.Float:
             output_lines.append(
                 f"%{ProgramMemory.mem_counter} = alloca double, align 8"
@@ -125,9 +139,14 @@ class Variable(Node):
     def write_code(self, output_lines):
         var_type, var_value, var_mem_id = ProgramMemory.variables_dict[self.name]
         if var_type is Types.Int:
-            output_lines.append(
-                f"%{ProgramMemory.mem_counter} = load i32, i32* %{var_mem_id}, align 4"
-            )
+            if self.name in ProgramMemory.local_var_dict:
+                output_lines.append(
+                    f"%{ProgramMemory.mem_counter} = load i32, i32* %{var_mem_id}, align 4"
+                )
+            elif self.name in ProgramMemory.variables_dict:
+                output_lines.append(
+                    f"%{ProgramMemory.mem_counter} = load i32, i32* @g{var_mem_id}, align 4"
+                )
             ProgramMemory.mem_counter += 1
         elif var_type is Types.Float:
             output_lines.append(
