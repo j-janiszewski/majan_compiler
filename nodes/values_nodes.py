@@ -50,27 +50,30 @@ class Assign(Instruction):
         return super().__str__(indent_level)
 
     def write_code(self, output_lines):
+        mode = ""
         if self.left.name in ProgramMemory.local_var_dict:
             var_type, var_value, var_mem_id = ProgramMemory.local_var_dict[self.left.name]
+            mode = WriteMode.Local
         else:
             var_type, var_value, var_mem_id = ProgramMemory.variables_dict[self.left.name]
+            mode = WriteMode.Global
         right_type, right_mem_id, right_value = self.right.write_code(output_lines)
         if var_type is Types.Int:
             if right_value != "":
-                if self.left.name in ProgramMemory.local_var_dict:
+                if mode is WriteMode.Local:
                     output_lines.append(
                         f"store i32 {right_value}, i32* %{var_mem_id}, align 4"
                     )
-                elif self.left.name in ProgramMemory.variables_dict:
+                elif mode is WriteMode.Global:
                     output_lines.append(
                         f"store i32 {right_value}, i32* @g{var_mem_id}, align 4"
                     )
             else:
-                if self.left.name in ProgramMemory.local_var_dict:
+                if mode is WriteMode.Local:
                     output_lines.append(
                         f"store i32 %{right_mem_id}, i32* %{var_mem_id}, align 4"
                     )
-                elif self.left.name in ProgramMemory.variables_dict:
+                elif mode is WriteMode.Global:
                     output_lines.append(
                         f"store i32 %{right_mem_id}, i32* @g{var_mem_id}, align 4"
                     )
@@ -88,20 +91,20 @@ class Assign(Instruction):
                 right_mem_id = ProgramMemory.mem_counter
                 ProgramMemory.mem_counter += 1
             if right_value != "":
-                if self.left.name in ProgramMemory.local_var_dict:
+                if mode is WriteMode.Local:
                     output_lines.append(
                         f"store double {right_value}, double* %{var_mem_id}, align 8"
                     )
-                elif self.left.name in ProgramMemory.variables_dict:
+                elif mode is WriteMode.Global:
                     output_lines.append(
                         f"store double {right_value}, double* @g{var_mem_id}, align 8"
                     )
             else:
-                if self.left.name in ProgramMemory.local_var_dict:
+                if mode is WriteMode.Local:
                     output_lines.append(
                         f"store double %{right_mem_id}, double* %{var_mem_id}, align 8"
                     )
-                elif self.left.name in ProgramMemory.variables_dict:
+                elif mode is WriteMode.Global:
                     output_lines.append(
                         f"store double %{right_mem_id}, double* @g{var_mem_id}, align 8"
                     )
@@ -112,14 +115,24 @@ class Assign(Instruction):
                 output_lines.append(f"store i1 %{right_mem_id}, i1* %{var_mem_id}")
         if var_type is Types.String:
             if right_value != "":
-                output_lines.append(  # TODO not sure if we can use mem_counter here or should dereference right_mem_id
-                    f"store i8* %{ProgramMemory.mem_counter - 1}, i8** %{var_mem_id}"
-                )
-                ProgramMemory.variables_dict[self.left.name] = (
-                    var_type,
-                    right_value,
-                    var_mem_id,
-                )
+                if mode is WriteMode.Local:
+                    output_lines.append(
+                        f"store i8* %{ProgramMemory.mem_counter - 1}, i8** %{var_mem_id}"
+                    )
+                    ProgramMemory.local_var_dict[self.left.name] = (
+                        var_type,
+                        right_value,
+                        var_mem_id,
+                    )
+                elif mode is WriteMode.Global:
+                    output_lines.append(
+                        f"store i8* %{ProgramMemory.mem_counter - 1}, i8** @g{var_mem_id}"
+                    )
+                    ProgramMemory.variables_dict[self.left.name] = (
+                        var_type,
+                        right_value,
+                        var_mem_id,
+                    )
         return var_type, var_mem_id, ""
 
 
@@ -161,9 +174,15 @@ class Variable(Node):
                 f"%{ProgramMemory.increment_and_read_mem()} = alloca i1"
             )
         elif self.variable_type is Types.String:
-            output_lines.append(
-                f"%{ProgramMemory.increment_and_read_mem()} = alloca i8*"
-            )
+            if(ProgramMemory.global_var):
+                ProgramMemory.header_lines.append(
+                    f"@g{ProgramMemory.global_counter} = global i8* null"
+                )
+                ProgramMemory.global_counter += 1
+            else:
+                output_lines.append(
+                    f"%{ProgramMemory.increment_and_read_mem()} = alloca i8*"
+                )
         return
 
     def write_code(self, output_lines):
@@ -216,9 +235,14 @@ class Variable(Node):
             )
 
         elif var_type is Types.String:
-            output_lines.append(
-                f"%{ProgramMemory.increment_and_read_mem()} = load i8*, i8** %{var_mem_id}"
-            )
+            if mode is WriteMode.Local:
+                output_lines.append(
+                    f"%{ProgramMemory.increment_and_read_mem()} = load i8*, i8** %{var_mem_id}"
+                )
+            elif mode is WriteMode.Global:
+                output_lines.append(
+                    f"%{ProgramMemory.increment_and_read_mem()} = load i8*, i8** @g{var_mem_id}"
+                )
 
             return var_type, ProgramMemory.mem_counter - 1, var_value
         return var_type, ProgramMemory.mem_counter - 1, ""

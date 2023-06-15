@@ -34,6 +34,7 @@ else:
     a = "test";
     b = 2;
     write(a);
+    write(b);
     """
 
     data1 = """
