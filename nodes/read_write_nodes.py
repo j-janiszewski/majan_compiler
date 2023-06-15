@@ -57,10 +57,10 @@ class Write(Instruction):
             self.write_llvm_label(output_lines, end_label)
         if type == Types.String:
             # No need to load mem_id before, because we are printing from dispatched variable
-            ProgramMemory.mem_counter += 1
             output_lines.append(
-                f"%{ProgramMemory.mem_counter} = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strps, i32 0, i32 0), i8* %{mem_id})"
+                f"call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strps, i32 0, i32 0), i8* %{mem_id})"
             )
+            ProgramMemory.mem_counter += 1
 
         return 0
 

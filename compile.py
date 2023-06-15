@@ -28,7 +28,7 @@ else:
     write(myGlob + myGlobFloat);
     """
 
-    data = """
+    data1 = """
     int b;
     string a;
     a = "test";
@@ -37,19 +37,24 @@ else:
     write(b);
     """
 
-    data1 = """
+    data = """
+    string b;
+
     function int test(){
-        int a;
-        a = 5;
+        string a;
+        a = "test";
+        write(a);
+        a = a + b;
         write(a);
     }
-    int a, b;
+
+    int a;
+    b = "pies";
     a = 3;
-    b = 1;
-    write(a);
+    a = a + 1;
     test();
-    write(b);
-    write(a+b);
+    write(a);
+    write(a);
     """
 
 result = parser.parse(data)

@@ -105,10 +105,10 @@ class BinOp(Instruction):
             output_lines.append(
                 f"store i8* %{ProgramMemory.mem_counter - 1}, i8** %{mem_ptrstr}"
             )
+            ProgramMemory.mem_counter += 1
             output_lines.append(
                 f"%{ProgramMemory.increment_and_read_mem()} = load i8*, i8** %{mem_ptrstr}"
             )
-            ProgramMemory.mem_counter += 1
             output_lines.append(  # Not sure if % should be before left_mem_id
                 f"%{ProgramMemory.mem_counter} = call i8* @strcpy(i8* %{ProgramMemory.mem_counter - 1}, i8* %{left_mem_id})"
             )
