@@ -5,10 +5,10 @@ class BinOp(Instruction):
     comparison_llvm_operators = {
         ("==", "i"): "eq",
         ("==", "f"): "oeq",
-        (">", "i"): "slt",
-        (">", "f"): "ult",
-        ("<", "i"): "sgt",
-        ("<", "f"): "ugt",
+        ("<", "i"): "slt",
+        ("<", "f"): "ult",
+        (">", "i"): "sgt",
+        (">", "f"): "ugt",
         ("<=", "i"): "sle",
         ("<=", "f"): "ule",
         (">=", "i"): "sge",
@@ -341,6 +341,7 @@ class UnOp(Instruction):
             output_lines.append(
                 f"%{ProgramMemory.increment_and_read_mem()} = xor i1 %{mem_id}, 1"
             )
+
         return Types.Bool, ProgramMemory.mem_counter - 1, ""
 
 
