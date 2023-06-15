@@ -29,13 +29,11 @@ else:
     """
 
     data = """
-    function int test(){
-        int a;
-        a = 5;
-        write(a);
-    }
-    int a;
-    a = test();
+    int b;
+    string a;
+    a = "test";
+    b = 2;
+    write(a);
     """
 
     data1 = """
