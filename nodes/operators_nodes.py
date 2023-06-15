@@ -171,7 +171,7 @@ class BinOp(Instruction):
             )
         else:
             output_lines.append(
-                f"%{ProgramMemory.increment_and_read_mem()} = {prefix}{operation} {result_type} %{left_mem_id}, %{right_mem_id}"
+                f"%{ProgramMemory.mem_counter} = {prefix}{operation} {result_type} %{left_mem_id}, %{right_mem_id}"
             )
         return return_type, ProgramMemory.increment_and_read_mem(), ""
 

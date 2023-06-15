@@ -202,6 +202,35 @@ def p_instruction_function(p):
     p[0] = node
 
 
+def p_instruction_function_params(p):
+    """instruction : FUNCTION INT ID LPAREN params RPAREN LCURLY lines RCURLY
+    | FUNCTION FLOAT ID LPAREN params RPAREN LCURLY lines RCURLY"""
+    node = Function(p.lineno(1), p[3], p[2])
+    node.left = p[5]
+    node.right = p[8]   # TODO right note for function code, left node for parameters?
+    p[0] = node
+
+
+def p_function_params_int(p):
+    """params : INT ID COMMA params"""
+    p[0] = Variable(p.lineno(2), p[2], Types.Int, p[4])
+
+
+def p_function_params_float(p):
+    """params : FLOAT ID COMMA params"""
+    p[0] = Variable(p.lineno(2), p[2], Types.Float, p[4])
+
+
+def p_function_params_one_int(p):
+    """params : INT ID"""
+    p[0] = Variable(p.lineno(2), p[2], Types.Int)
+
+
+def p_function_params_one_float(p):
+    """params : FLOAT ID"""
+    p[0] = Variable(p.lineno(2), p[2], Types.Float)
+
+
 def p_expression_binop(p):
     """expression : expression PLUS expression
     | expression MINUS expression
@@ -250,6 +279,26 @@ def p_expression_function_call(p):
     node = Variable(p.lineno(1), p[1])  # treating function call as variable (without assign to)
     node.type = "function call"
     p[0] = node
+
+
+def p_expression_function_call_params(p):
+    "expression : ID LPAREN call_params RPAREN"
+    node = Variable(p.lineno(1), p[1])  # treating function call as variable (without assign to)
+    node.type = "function call"
+    node.left = p[3]
+    p[0] = node
+
+
+def p_function_call_params(p):
+    """call_params : ID COMMA call_params"""
+    node = Variable(p.lineno(1), p[1])
+    node.left = p[3]
+    p[0] = node
+
+
+def p_function_call_one_param(p):
+    """call_params : ID"""
+    p[0] = Variable(p.lineno(1), p[1])
 
 
 def p_expression_int_vars_init(p):

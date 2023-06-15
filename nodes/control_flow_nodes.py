@@ -140,7 +140,20 @@ class Function(Instruction):
         ret_type = "i32"    # default case, returns int
         if self.return_type == "float":
             ret_type = "double"
-        ProgramMemory.buffer.append(f"define {ret_type} @{self.name}() nounwind {{")
+
+        params = self.get_params()
+
+        ProgramMemory.buffer.append(f"define {ret_type} @{self.name}({params}) nounwind {{")
+
+        next = self.left
+        while next:
+            ProgramMemory.local_var_dict[next.name] = (
+                next.variable_type,
+                0,
+                ProgramMemory.mem_counter,
+            )
+            next.write_param_code(ProgramMemory.buffer, next.name)
+            next = next.left
 
         self.right.write_code(ProgramMemory.buffer)
 
@@ -154,4 +167,17 @@ class Function(Instruction):
         ProgramMemory.buffer = []
         ProgramMemory.local_var_dict.clear()
         return 0
+    
+    def get_params(self):
+        params = []
+        next = self.left
+        while next:
+            if next.variable_type is Types.Int:
+                params.append(f"i32 %{next.name}")
+            elif next.variable_type is Types.Float:
+                params.append(f"double %{next.name}")
+            next = next.left
+        return ", ".join(params)
+    
+
     

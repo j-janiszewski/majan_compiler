@@ -164,7 +164,7 @@ class Variable(Node):
                 ProgramMemory.mem_counter += 1
         elif self.variable_type is Types.Float:
             if(ProgramMemory.global_var):
-                ProgramMemory.header_lines.append(f"@g{ProgramMemory.global_counter} = global double 0")
+                ProgramMemory.header_lines.append(f"@g{ProgramMemory.global_counter} = global double 0.0")
                 ProgramMemory.global_counter += 1
             else:
                 output_lines.append(f"%{ProgramMemory.mem_counter} = alloca double, align 8")
@@ -211,8 +211,9 @@ class Variable(Node):
                     f"%{ProgramMemory.mem_counter} = load i32, i32* @g{var_mem_id}, align 4"
                 )
             elif mode is WriteMode.FunCall:
+                params = self.get_call_params(output_lines)
                 output_lines.append(
-                    f"%{ProgramMemory.mem_counter} = call i32 @{self.name}()"
+                    f"%{ProgramMemory.mem_counter} = call i32 @{self.name}({params})"
                 )
             ProgramMemory.mem_counter += 1
         elif var_type is Types.Float:
@@ -246,6 +247,40 @@ class Variable(Node):
 
             return var_type, ProgramMemory.mem_counter - 1, var_value
         return var_type, ProgramMemory.mem_counter - 1, ""
+
+    def write_param_code(self, output_lines, input_param):
+        if self.variable_type is Types.Int:
+            output_lines.append(f"%{ProgramMemory.mem_counter} = alloca i32, align 4")
+            output_lines.append(f"store i32 %{input_param}, i32* %{ProgramMemory.mem_counter}, align 4")
+            ProgramMemory.mem_counter += 1
+        elif self.variable_type is Types.Float:
+            output_lines.append(f"%{ProgramMemory.mem_counter} = alloca double, align 8")
+            output_lines.append(f"store double %{input_param}, double* %{ProgramMemory.mem_counter}, align 8")
+            ProgramMemory.mem_counter += 1
+        return
+    
+    def get_call_params(self, output_lines):
+        params = []
+        next = self.left
+        while next:
+            if next.name in ProgramMemory.local_var_dict:
+                var_type, _, var_mem_id = ProgramMemory.local_var_dict[next.name]
+                if var_type is Types.Int:
+                    params.append(f"i32 %{var_mem_id}")
+                elif var_type is Types.Float:
+                    params.append(f"double %{var_mem_id}")
+            elif next.name in ProgramMemory.variables_dict:
+                var_type, _, var_mem_id = ProgramMemory.variables_dict[next.name]
+                if var_type is Types.Int:
+                    output_lines.append(f"%{ProgramMemory.mem_counter} = load i32, i32* @g{var_mem_id}, align 4")
+                    params.append(f"i32 %{ProgramMemory.mem_counter}")
+                    ProgramMemory.mem_counter += 1
+                elif var_type is Types.Float:
+                    output_lines.append(f"%{ProgramMemory.mem_counter} = load double, double* @g{var_mem_id}, align 8")
+                    params.append(f"double %{ProgramMemory.mem_counter}")
+                    ProgramMemory.mem_counter += 1
+            next = next.left
+        return ", ".join(params)
 
 
 class Value(Node):
