@@ -14,8 +14,9 @@ class ProgramMemory(object):
 
     global_var = True
     global_counter = 1
-    temp_mem_id = 1
+    main_mem_count = 1
     buffer = []
+    function_lines = []
 
 
 class Types(Enum):
@@ -23,6 +24,12 @@ class Types(Enum):
     Float = "float"
     Bool = "bool"
     String = "string"
+
+
+class WriteMode(Enum):
+    Global = "global"
+    Local = "local"
+    FunCall = "funcall"
 
 
 class Node:
@@ -76,7 +83,38 @@ class Instructions(Node):
 
     def write_code(self, output_lines: list):
         for node in self.instructions:
-            node.write_code(output_lines)
+            if node.type == "init node":
+                var_type = node.variable_type
+                next = node.left
+                while next:
+                    if(ProgramMemory.global_var):
+                        ProgramMemory.variables_dict[next.name] = (
+                            var_type,
+                            0,
+                            ProgramMemory.global_counter,
+                        )
+                    else:
+                        ProgramMemory.local_var_dict[next.name] = (
+                            var_type,
+                            0,
+                            ProgramMemory.mem_counter,
+                        )
+                    next.write_init_code(output_lines)
+                    next = next.left
+            elif node.type == "function node":
+                return_type = Types.Int
+                if node.return_type == "double":
+                    return_type = Types.Float
+                ProgramMemory.function_dict[node.name] = (
+                            return_type,
+                            0,
+                            -1,
+                        )
+                node.write_code(output_lines)
+            elif node.type == "function call":
+                node.write_code(output_lines)
+            elif isinstance(node, Instruction):
+                node.write_code(output_lines)
         return 0
 
 
@@ -90,16 +128,9 @@ class AST:
             return 0
         for node in self.root.instructions:
             if node.type == "init node":
-                variable_type = node.variable_type
-                left_node = node.left
-                while left_node:
-                    if left_node.name in variables_dict:
-                        print(
-                            f"ERROR: Variable already defined, (line: {left_node.line_no})"
-                        )
-                        return 1
-                    variables_dict[left_node.name] = variable_type
-                    left_node = left_node.left
+                semantic_check, _ = node.check_semantics(variables_dict)
+                if semantic_check != 0:
+                    return 1
             elif isinstance(node, Instruction):
                 semantic_check, _ = node.check_semantics(variables_dict)
                 if semantic_check != 0:
@@ -133,34 +164,7 @@ class AST:
             output_lines.append(f"}}")
             join_and_write_to_file_ll(filename, output_lines)
             return
-        for node in self.root.instructions:
-            if node.type == "init node":
-                var_type = node.variable_type
-                next = node.left
-                while next:
-                    if(ProgramMemory.global_var):
-                        ProgramMemory.variables_dict[next.name] = (
-                            var_type,
-                            0,
-                            ProgramMemory.global_counter,
-                        )
-                    else:
-                        ProgramMemory.local_var_dict[next.name] = (
-                            var_type,
-                            0,
-                            ProgramMemory.mem_counter,
-                        )
-                    next.write_init_code(output_lines)
-                    next = next.left
-            elif node.type == "function node":
-                ProgramMemory.function_dict[node.name] = (
-                            node.return_type,
-                            0,
-                            -1,
-                        )
-                node.write_code(output_lines)
-            elif isinstance(node, Instruction):
-                node.write_code(output_lines)
+        self.root.write_code(output_lines)
 
         output_lines.append(f"ret i32 0")
         output_lines.append(f"}}")
@@ -171,7 +175,8 @@ class AST:
 def join_and_write_to_file_ll(filename, main_lines):
     ProgramMemory.header_lines.append(f"")
     header = "\n".join(ProgramMemory.header_lines)
+    functions = "\n".join(ProgramMemory.function_lines)
     main = "\n".join(main_lines)
-    data = header + "\n" + main
+    data = header + "\n" + functions + "\n" + main
     with open(filename + ".ll", "w") as file:
         file.write(data)

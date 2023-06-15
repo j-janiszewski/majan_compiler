@@ -1,4 +1,4 @@
-from .common import Instruction, Types, ProgramMemory, Node
+from .common import Instruction, Types, ProgramMemory, Node, WriteMode
 
 
 class Init(Node):
@@ -6,6 +6,19 @@ class Init(Node):
         super().__init__(line_no)
         self.variable_type = variable_type
         self.type = "init node"
+
+    def check_semantics(self, variables_dict):
+        variable_type = self.variable_type
+        left_node = self.left
+        while left_node:
+            if left_node.name in variables_dict:
+                print(
+                    f"ERROR: Variable already defined, (line: {left_node.line_no})"
+                )
+                return 1, ""
+            variables_dict[left_node.name] = variable_type
+            left_node = left_node.left
+        return 0, ""
 
     def __str__(self, indent_level=0):
         return super().__str__(indent_level, f"(type: {self.variable_type})")
@@ -37,7 +50,10 @@ class Assign(Instruction):
         return super().__str__(indent_level)
 
     def write_code(self, output_lines):
-        var_type, var_value, var_mem_id = ProgramMemory.variables_dict[self.left.name]
+        if self.left.name in ProgramMemory.local_var_dict:
+            var_type, var_value, var_mem_id = ProgramMemory.local_var_dict[self.left.name]
+        else:
+            var_type, var_value, var_mem_id = ProgramMemory.variables_dict[self.left.name]
         right_type, right_mem_id, right_value = self.right.write_code(output_lines)
         if var_type is Types.Int:
             if right_value != "":
@@ -149,25 +165,47 @@ class Variable(Node):
         return
 
     def write_code(self, output_lines):
-        var_type, var_value, var_mem_id = ProgramMemory.variables_dict[self.name]
+        mode = ""
+        if self.name in ProgramMemory.local_var_dict:
+            var_type, var_value, var_mem_id = ProgramMemory.local_var_dict[self.name]
+            mode = WriteMode.Local
+        elif self.name in ProgramMemory.variables_dict:
+            var_type, var_value, var_mem_id = ProgramMemory.variables_dict[self.name]
+            mode = WriteMode.Global
+        elif self.name in ProgramMemory.function_dict:
+            var_type, _, _ = ProgramMemory.function_dict[self.name]
+            mode = WriteMode.FunCall
+        else:
+            print(
+                    f"ERROR: Unknown {self.name}: local > global > function"
+                )
+            return "", "", -1
         if var_type is Types.Int:
-            if self.name in ProgramMemory.local_var_dict:
+            if mode is WriteMode.Local:
                 output_lines.append(
                     f"%{ProgramMemory.mem_counter} = load i32, i32* %{var_mem_id}, align 4"
                 )
-            elif self.name in ProgramMemory.variables_dict:
+            elif mode is WriteMode.Global:
                 output_lines.append(
                     f"%{ProgramMemory.mem_counter} = load i32, i32* @g{var_mem_id}, align 4"
                 )
+            elif mode is WriteMode.FunCall:
+                output_lines.append(
+                    f"%{ProgramMemory.mem_counter} = call i32 @{self.name}()"
+                )
             ProgramMemory.mem_counter += 1
         elif var_type is Types.Float:
-            if self.name in ProgramMemory.local_var_dict:
+            if mode is WriteMode.Local:
                 output_lines.append(
                     f"%{ProgramMemory.mem_counter} = load double, double* %{var_mem_id}, align 8"
                 )
-            elif self.name in ProgramMemory.variables_dict:
+            elif mode is WriteMode.Global:
                 output_lines.append(
                     f"%{ProgramMemory.mem_counter} = load double, double* @g{var_mem_id}, align 8"
+                )
+            elif mode is WriteMode.FunCall:
+                output_lines.append(
+                    f"%{ProgramMemory.mem_counter} = call double @{self.name}"
                 )
             ProgramMemory.mem_counter += 1
         elif var_type is Types.Bool:

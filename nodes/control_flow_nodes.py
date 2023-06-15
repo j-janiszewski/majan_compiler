@@ -74,14 +74,35 @@ class Function(Instruction):
         self.return_type = return_type
         self.type = "function node"
 
+    def check_semantics(self, variables_dict):  # TODO
+        if self.return_type not in [Types.Int, Types.Float]:
+            return (1, "")
+        right_semantic_check, _= self.right.check_semantics(variables_dict)
+        if right_semantic_check != 0:
+            return (1, "")
+        return (0, "")
+
     def write_code(self, output_lines: list):
         ProgramMemory.global_var = False
+        ProgramMemory.main_mem_count = ProgramMemory.mem_counter
+        ProgramMemory.mem_counter = 1
+        ProgramMemory.local_var_dict.clear()
 
+        ret_type = "i32"    # default case, returns int
+        if self.return_type is Types.Float:
+            ret_type = "double"
+        ProgramMemory.buffer.append(f"define {ret_type} @{self.name}() nounwind {{")
 
+        self.right.write_code(ProgramMemory.buffer)
 
-        output_lines.extend(ProgramMemory.buffer) # TODO check how works
+        ProgramMemory.buffer.append(f"ret {ret_type} 0") # TODO return value from function
+        ProgramMemory.buffer.append(f"}}\n")
+        ProgramMemory.function_lines.extend(ProgramMemory.buffer) # TODO check how works
+
         ProgramMemory.global_var = True
-        ProgramMemory.temp_mem_id = 1
+        ProgramMemory.mem_counter = ProgramMemory.main_mem_count
+        ProgramMemory.main_mem_count = 1
         ProgramMemory.buffer = []
+        ProgramMemory.local_var_dict.clear()
         return 0
     

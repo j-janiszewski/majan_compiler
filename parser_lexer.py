@@ -15,7 +15,8 @@ from nodes import (
     StringValue,
     UnOp,
     Length,
-    If
+    If,
+    Function,
 )
 
 tokens = (
@@ -50,6 +51,7 @@ tokens = (
     "XOR",
     "LENGTH",
     "COMPARISON",
+    "FUNCTION",
 )
 
 
@@ -84,6 +86,7 @@ reserved = {
     "or": "OR",
     "xor": "XOR",
     "length": "LENGTH",
+    "function": "FUNCTION",
 }
 
 precedence = (
@@ -195,6 +198,13 @@ def p_instruction_assignment_string(p):
     p[0] = node
 
 
+def p_instruction_function(p):
+    """instruction : FUNCTION INT ID LPAREN RPAREN LCURLY lines RCURLY"""
+    node = Function(p.lineno(1), p[3], p[2])
+    node.right = p[7]   # TODO right note for function code, left node for parameters?
+    p[0] = node
+
+
 def p_expression_binop(p):
     """expression : expression PLUS expression
     | expression MINUS expression
@@ -236,6 +246,13 @@ def p_expression_float_value(p):
 def p_expression_bool_value(p):
     "expression : BOOL_VALUE"
     p[0] = BoolValue(p.lineno(1), p[1])
+
+
+def p_expression_function_call(p):
+    "expression : ID LPAREN RPAREN"
+    node = Variable(p.lineno(1), p[1])  # treating function call as variable (without assign to)
+    node.type = "function call"
+    p[0] = node
 
 
 def p_expression_int_vars_init(p):
