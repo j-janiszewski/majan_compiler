@@ -127,7 +127,7 @@ class Instructions(Node):
                     next = next.left
             elif node.type == "function node":
                 return_type = Types.Int
-                if node.return_type == "double":
+                if node.return_type == "float":
                     return_type = Types.Float
                 ProgramMemory.function_dict[node.name] = (
                             return_type,

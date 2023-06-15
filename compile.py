@@ -28,16 +28,19 @@ else:
     write(myGlob + myGlobFloat);
     """
 
-    data1 = """
-    int b;
-    string a;
-    a = "test";
-    b = 2;
-    write(a);
-    write(b);
+    data = """
+    function float test(){
+        int a;
+        a = 5;
+    }
+
+    function int test2(){
+        int a;
+        a = 3;
+    }
     """
 
-    data = """
+    data1 = """
     string b;
 
     function int test(){

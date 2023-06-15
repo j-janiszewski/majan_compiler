@@ -195,14 +195,8 @@ def p_instruction_assignment_string(p):
     )
 
 def p_instruction_function(p):
-    """instruction : FUNCTION INT ID LPAREN RPAREN LCURLY lines RCURLY"""
-    node = Function(p.lineno(1), p[3], p[2])
-    node.right = p[7]   # TODO right note for function code, left node for parameters?
-    p[0] = node
-
-
-def p_instruction_function(p):
-    """instruction : FUNCTION INT ID LPAREN RPAREN LCURLY lines RCURLY"""
+    """instruction : FUNCTION INT ID LPAREN RPAREN LCURLY lines RCURLY
+    | FUNCTION FLOAT ID LPAREN RPAREN LCURLY lines RCURLY"""
     node = Function(p.lineno(1), p[3], p[2])
     node.right = p[7]   # TODO right note for function code, left node for parameters?
     p[0] = node

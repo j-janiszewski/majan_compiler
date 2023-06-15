@@ -138,7 +138,7 @@ class Function(Instruction):
         ProgramMemory.local_var_dict.clear()
 
         ret_type = "i32"    # default case, returns int
-        if self.return_type is Types.Float:
+        if self.return_type == "float":
             ret_type = "double"
         ProgramMemory.buffer.append(f"define {ret_type} @{self.name}() nounwind {{")
 
