@@ -18,6 +18,16 @@ class ProgramMemory(object):
     buffer = []
     function_lines = []
 
+    @classmethod
+    def increment_and_read_mem(cls):
+        cls.mem_counter += 1
+        return cls.mem_counter - 1
+
+    @classmethod
+    def increment_and_read_label(cls):
+        cls.labels_count += 1
+        return cls.labels_count - 1
+
 
 class Types(Enum):
     Int = "int"
@@ -53,7 +63,18 @@ class Node:
 
 
 class Instruction(Node):
-    pass
+    def write_llvm_if(
+        self, output_lines: list, val, first_case_label, second_case_label
+    ):
+        output_lines.append(
+            f"br i1 {val}, label %l{first_case_label}, label %l{second_case_label}"
+        )
+
+    def write_llvm_goto_label(self, output_lines: list, label):
+        output_lines.append(f"br label %l{label}")
+
+    def write_llvm_label(self, output_lines: list, label):
+        output_lines.append(f"l{label}:")
 
 
 class Instructions(Node):
