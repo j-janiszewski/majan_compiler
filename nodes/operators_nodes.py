@@ -93,14 +93,10 @@ class BinOp(Instruction):
         right_type, right_mem_id, right_val = self.right.write_code(output_lines)
         if left_type == right_type == Types.String and self.op == "+":
             l = left_val + right_val + 1
-            output_lines.append(
-                f"%{ProgramMemory.mem_counter} = alloca [{l} x i8]"
-            )
+            output_lines.append(f"%{ProgramMemory.mem_counter} = alloca [{l} x i8]")
             mem_str = ProgramMemory.mem_counter
             ProgramMemory.mem_counter += 1
-            output_lines.append(
-                f"%{ProgramMemory.mem_counter} = alloca i8*"
-            )
+            output_lines.append(f"%{ProgramMemory.mem_counter} = alloca i8*")
             mem_ptrstr = ProgramMemory.mem_counter
             ProgramMemory.mem_counter += 1
             output_lines.append(
@@ -183,46 +179,62 @@ class BinOp(Instruction):
         if self.op in ["and", "or"]:
             _, left_mem_id, left_val = self.left.write_code(output_lines)
             first_case_label = ProgramMemory.labels_count
-            second_case_label = ProgramMemory.labels_count+1
-            end_label = ProgramMemory.labels_count+2
-            label_go_to_end = ProgramMemory.labels_count+3
-            ProgramMemory.labels_count+=4
+            second_case_label = ProgramMemory.labels_count + 1
+            end_label = ProgramMemory.labels_count + 2
+            label_go_to_end = ProgramMemory.labels_count + 3
+            ProgramMemory.labels_count += 4
             output_lines.append(f"br label %l{first_case_label}")
             output_lines.append(f"l{first_case_label}:")
-            if self.op =="and":
-                if left_val!="":
-                    output_lines.append(f"br i1 {left_val}, label %l{second_case_label}, label %l{end_label}")
+            if self.op == "and":
+                if left_val != "":
+                    output_lines.append(
+                        f"br i1 {left_val}, label %l{second_case_label}, label %l{end_label}"
+                    )
                 else:
-                    output_lines.append(f"br i1 %{left_mem_id}, label %l{second_case_label}, label %l{end_label}")
+                    output_lines.append(
+                        f"br i1 %{left_mem_id}, label %l{second_case_label}, label %l{end_label}"
+                    )
                 output_lines.append(f"l{second_case_label}:")
                 _, right_mem_id, right_val = self.right.write_code(output_lines)
                 output_lines.append(f"br label %l{label_go_to_end}")
                 output_lines.append(f"l{label_go_to_end}:")
                 output_lines.append(f"br label %l{end_label}")
                 output_lines.append(f"l{end_label}:")
-                if right_val!="":
-                    output_lines.append(f"%{ProgramMemory.mem_counter} = phi i1[0, %l{first_case_label}],[{right_val},%l{label_go_to_end}]")
+                if right_val != "":
+                    output_lines.append(
+                        f"%{ProgramMemory.mem_counter} = phi i1[0, %l{first_case_label}],[{right_val},%l{label_go_to_end}]"
+                    )
                 else:
-                    output_lines.append(f"%{ProgramMemory.mem_counter} = phi i1[0, %l{first_case_label}],[%{right_mem_id},%l{label_go_to_end}]")
-            if self.op =="or":
-                if left_val!="":
-                    output_lines.append(f"br i1 {left_val}, label %l{end_label}, label %l{second_case_label}")
+                    output_lines.append(
+                        f"%{ProgramMemory.mem_counter} = phi i1[0, %l{first_case_label}],[%{right_mem_id},%l{label_go_to_end}]"
+                    )
+            if self.op == "or":
+                if left_val != "":
+                    output_lines.append(
+                        f"br i1 {left_val}, label %l{end_label}, label %l{second_case_label}"
+                    )
                 else:
-                    output_lines.append(f"br i1 %{left_mem_id}, label %l{end_label}, label %l{second_case_label}")
+                    output_lines.append(
+                        f"br i1 %{left_mem_id}, label %l{end_label}, label %l{second_case_label}"
+                    )
                 output_lines.append(f"l{second_case_label}:")
                 _, right_mem_id, right_val = self.right.write_code(output_lines)
                 output_lines.append(f"br label %l{label_go_to_end}")
                 output_lines.append(f"l{label_go_to_end}:")
                 output_lines.append(f"br label %l{end_label}")
                 output_lines.append(f"l{end_label}:")
-                if right_val!="":
-                    output_lines.append(f"%{ProgramMemory.mem_counter} = phi i1[1, %l{first_case_label}],[{right_val},%l{label_go_to_end}]")
+                if right_val != "":
+                    output_lines.append(
+                        f"%{ProgramMemory.mem_counter} = phi i1[1, %l{first_case_label}],[{right_val},%l{label_go_to_end}]"
+                    )
                 else:
-                
-                    output_lines.append(f"%{ProgramMemory.mem_counter} = phi i1[1, %l{first_case_label}],[%{right_mem_id},%l{label_go_to_end}]")
-            ProgramMemory.mem_counter+=1
-            return Types.Bool, ProgramMemory.mem_counter-1,""
-        if self.op =="xor":
+
+                    output_lines.append(
+                        f"%{ProgramMemory.mem_counter} = phi i1[1, %l{first_case_label}],[%{right_mem_id},%l{label_go_to_end}]"
+                    )
+            ProgramMemory.mem_counter += 1
+            return Types.Bool, ProgramMemory.mem_counter - 1, ""
+        if self.op == "xor":
             _, left_mem_id, left_val = self.left.write_code(output_lines)
             _, right_mem_id, right_val = self.right.write_code(output_lines)
             xor_operation = (
@@ -297,20 +309,23 @@ class BinOp(Instruction):
                 f"%{ProgramMemory.mem_counter} = {prefix}cmp {operation} {args_type} {left_val} , {right_val}"
             )
         elif right_val != "":
-            output_lines.append(f"%{ProgramMemory.mem_counter} = {prefix}cmp {operation} {args_type} %{left_mem_id} , {right_val}")
+            output_lines.append(
+                f"%{ProgramMemory.mem_counter} = {prefix}cmp {operation} {args_type} %{left_mem_id} , {right_val}"
+            )
         elif left_val != "":
-            output_lines.append(f"%{ProgramMemory.mem_counter} = {prefix}cmp {operation} {args_type} {left_val} , %{right_mem_id}")
+            output_lines.append(
+                f"%{ProgramMemory.mem_counter} = {prefix}cmp {operation} {args_type} {left_val} , %{right_mem_id}"
+            )
         else:
-            output_lines.append(f"%{ProgramMemory.mem_counter} = {prefix}cmp {operation} {args_type} %{left_mem_id} , %{right_mem_id}")
-        ProgramMemory.mem_counter+=1
-        return Types.Bool, ProgramMemory.mem_counter-1, ""
-            
-
+            output_lines.append(
+                f"%{ProgramMemory.mem_counter} = {prefix}cmp {operation} {args_type} %{left_mem_id} , %{right_mem_id}"
+            )
+        ProgramMemory.mem_counter += 1
+        return Types.Bool, ProgramMemory.mem_counter - 1, ""
 
     def write_code(self, output_lines: list):
         if self.op in ["+", "-", "*", "/"]:
             return self.__write_code_arithmetic_operation(output_lines)
-        if self.op in ["and", "or", "xor"]:
         if self.op in ["and", "or", "xor"]:
             return self.__write_code_logical_operators(output_lines)
         if self.op in ["==", ">", ">=", "<", "<="]:
