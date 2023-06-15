@@ -16,27 +16,14 @@ else:
     read(s);
     bool num;
     d=76.5;
-    a=70;
+    read(a);
     b=7;
-    if(a <=(b + 5)) {
-    write(6);
-    b*5;
-
-    } else {
-    write(2);
-    write(s);
-    }
+ 
    
    while (!(a==10)){
    write(a);
-
-   if(b>=a){
-   write(b>=a);
-   } else{
-   write(b>=a);
-   }
    true xor false;
-   a = a+ 1;
+   a = a + 1;
    }
     
     """

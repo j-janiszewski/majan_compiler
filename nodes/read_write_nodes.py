@@ -61,7 +61,7 @@ class Write(Instruction):
             output_lines.append(
                 f"%{ProgramMemory.mem_counter} = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strps, i32 0, i32 0), i8* %{mem_id})"
             )
-            ProgramMemory.mem_counter += 1
+
         return 0
 
 
