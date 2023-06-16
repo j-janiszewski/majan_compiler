@@ -9,11 +9,32 @@ if len(sys.argv) > 1:
     with open(sys.argv[1], "r") as f:
         data = f.read()
 else:
-    data1 = """
-    int a, b;
+    data = """
+    bool t, f;
+
+    function int nope(){
+        if(t){
+            write(1);
+        }
+        if(f){
+            write(0);
+        }
+        if(5 > 2){
+            write(5);
+        }
+        else{
+            write(2);
+        }
+        return 0;
+    }
+
+    t = true;
+    f = false;
+    nope();
+
     """
 
-    data = """
+    data1 = """
     function int nope(int a){
         return a;
     }

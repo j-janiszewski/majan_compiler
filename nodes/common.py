@@ -109,13 +109,10 @@ class Instructions(Node):
                 next = node.left
                 while next:
                     if(ProgramMemory.global_var):
-                        mem_id = ProgramMemory.global_counter
-                        if var_type is Types.Bool: # TODO global bool
-                            mem_id = ProgramMemory.mem_counter
                         ProgramMemory.variables_dict[next.name] = (
                             var_type,
                             0,
-                            mem_id,
+                            ProgramMemory.global_counter,
                         )
                     else:
                         ProgramMemory.local_var_dict[next.name] = (

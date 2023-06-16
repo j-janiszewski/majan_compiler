@@ -110,9 +110,15 @@ class Assign(Instruction):
                     )
         if var_type is Types.Bool:
             if right_value != "":
-                output_lines.append(f"store i1 {right_value}, i1* %{var_mem_id}")
+                if mode is WriteMode.Local:
+                    output_lines.append(f"store i1 {right_value}, i1* %{var_mem_id}")
+                elif mode is WriteMode.Global:
+                    output_lines.append(f"store i1 {right_value}, i1* @g{var_mem_id}")
             else:
-                output_lines.append(f"store i1 %{right_mem_id}, i1* %{var_mem_id}")
+                if mode is WriteMode.Local:
+                    output_lines.append(f"store i1 %{right_mem_id}, i1* %{var_mem_id}")
+                elif mode is WriteMode.Global:
+                    output_lines.append(f"store i1 %{right_mem_id}, i1* @g{var_mem_id}")
         if var_type is Types.String:
             if right_value != "":
                 if mode is WriteMode.Local:
@@ -170,9 +176,11 @@ class Variable(Node):
                 output_lines.append(f"%{ProgramMemory.mem_counter} = alloca double, align 8")
                 ProgramMemory.mem_counter += 1
         elif self.variable_type is Types.Bool:
-            output_lines.append(
-                f"%{ProgramMemory.increment_and_read_mem()} = alloca i1"
-            )
+            if(ProgramMemory.global_var):
+                ProgramMemory.header_lines.append(f"@g{ProgramMemory.global_counter} = global i1 0")
+                ProgramMemory.global_counter += 1
+            else:
+                output_lines.append(f"%{ProgramMemory.increment_and_read_mem()} = alloca i1")
         elif self.variable_type is Types.String:
             if(ProgramMemory.global_var):
                 ProgramMemory.header_lines.append(
@@ -232,9 +240,14 @@ class Variable(Node):
                 )
             ProgramMemory.mem_counter += 1
         elif var_type is Types.Bool:
-            output_lines.append(
-                f"%{ProgramMemory.increment_and_read_mem()} = load i1, i1* %{var_mem_id}"
-            )
+            if mode is WriteMode.Local:
+                output_lines.append(
+                    f"%{ProgramMemory.increment_and_read_mem()} = load i1, i1* %{var_mem_id}"
+                )
+            elif mode is WriteMode.Global:
+                output_lines.append(
+                    f"%{ProgramMemory.increment_and_read_mem()} = load i1, i1* @g{var_mem_id}"
+                )
 
         elif var_type is Types.String:
             if mode is WriteMode.Local:
