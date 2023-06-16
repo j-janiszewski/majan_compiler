@@ -10,28 +10,25 @@ if len(sys.argv) > 1:
         data = f.read()
 else:
     data = """
-    bool t, f;
+    int ga;
+    float gb;
 
-    function int nope(){
-        if(t){
-            write(1);
-        }
-        if(f){
-            write(0);
-        }
-        if(5 > 2){
-            write(5);
-        }
-        else{
-            write(2);
-        }
-        return 0;
+    function float sum(int a, float b){
+        float c;
+
+        float gb;
+        gb = 5.0;
+        write(gb);
+
+        c = a + b;
+        return c;
     }
 
-    t = true;
-    f = false;
-    nope();
-
+    ga = 1;
+    gb = 2.0;
+    float c;
+    c = sum(ga, gb);
+    write(c);
     """
 
     data1 = """
