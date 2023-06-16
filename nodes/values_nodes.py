@@ -226,8 +226,9 @@ class Variable(Node):
                     f"%{ProgramMemory.mem_counter} = load double, double* @g{var_mem_id}, align 8"
                 )
             elif mode is WriteMode.FunCall:
+                params = self.get_call_params(output_lines)
                 output_lines.append(
-                    f"%{ProgramMemory.mem_counter} = call double @{self.name}"
+                    f"%{ProgramMemory.mem_counter} = call double @{self.name}({params})"
                 )
             ProgramMemory.mem_counter += 1
         elif var_type is Types.Bool:

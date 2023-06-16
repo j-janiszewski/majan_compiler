@@ -1,4 +1,5 @@
 from .common import Instruction, Types, ProgramMemory
+from .values_nodes import IntValue, FloatValue, Variable
 
 
 class While(Instruction):
@@ -117,11 +118,12 @@ class If(Instruction):
 
 
 class Function(Instruction):
-    def __init__(self, line_no, name, return_type) -> None:
+    def __init__(self, line_no, name, return_type, return_node) -> None:
         super().__init__(line_no)
         self.name = name
         self.return_type = return_type
         self.type = "function node"
+        self.return_node = return_node
 
     def check_semantics(self, variables_dict):  # TODO
         if self.return_type not in [Types.Int, Types.Float]:
@@ -156,10 +158,10 @@ class Function(Instruction):
             next = next.left
 
         self.right.write_code(ProgramMemory.buffer)
+        self.write_return_code(ProgramMemory.buffer, ret_type)
 
-        ProgramMemory.buffer.append(f"ret {ret_type} 0") # TODO return value from function
         ProgramMemory.buffer.append(f"}}\n")
-        ProgramMemory.function_lines.extend(ProgramMemory.buffer) # TODO check how works
+        ProgramMemory.function_lines.extend(ProgramMemory.buffer)
 
         ProgramMemory.global_var = True
         ProgramMemory.mem_counter = ProgramMemory.main_mem_count
@@ -179,5 +181,29 @@ class Function(Instruction):
             next = next.left
         return ", ".join(params)
     
+    def write_return_code(self, output_lines, return_type):
+        if isinstance(self.return_node, IntValue):
+            output_lines.append(f"ret {return_type} {self.return_node.value}")
+        elif isinstance(self.return_node, FloatValue):
+            output_lines.append(f"ret {return_type} {self.return_node.value}")
+        elif isinstance(self.return_node, Variable):
+            if self.return_node.name in ProgramMemory.local_var_dict:
+                var_type, _, var_mem_id = ProgramMemory.local_var_dict[self.return_node.name]
+                if var_type is Types.Int:                   
+                    output_lines.append(f"%{ProgramMemory.mem_counter} = load i32, i32* %{var_mem_id}, align 4")
+                elif var_type is Types.Float:
+                    output_lines.append(f"%{ProgramMemory.mem_counter} = load double, double* %{var_mem_id}, align 8")
+                output_lines.append(f"ret {return_type} %{ProgramMemory.increment_and_read_mem()}")
+            elif self.return_node.name in ProgramMemory.variables_dict:
+                var_type, _, var_mem_id = ProgramMemory.variables_dict[self.return_node.name]
+                if var_type is Types.Int:                   
+                    output_lines.append(f"%{ProgramMemory.mem_counter} = load i32, i32* @g{var_mem_id}, align 4")
+                elif var_type is Types.Float:
+                    output_lines.append(f"%{ProgramMemory.mem_counter} = load double, double* @g{var_mem_id}, align 8")
+                output_lines.append(f"ret {return_type} %{ProgramMemory.increment_and_read_mem()}")
+            else:
+                print(f"ERROR: Function {self.name} has invalid return - variable not found: local > global")
+        else:
+            print(f"ERROR: Function {self.name} has invalid return.")
 
     

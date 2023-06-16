@@ -53,6 +53,7 @@ tokens = (
     "LENGTH",
     "COMPARISON",
     "FUNCTION",
+    "RETURN",
 )
 
 
@@ -88,6 +89,7 @@ reserved = {
     "xor": "XOR",
     "length": "LENGTH",
     "function": "FUNCTION",
+    "return": "RETURN",
 }
 
 precedence = (
@@ -195,19 +197,19 @@ def p_instruction_assignment_string(p):
     )
 
 def p_instruction_function(p):
-    """instruction : FUNCTION INT ID LPAREN RPAREN LCURLY lines RCURLY
-    | FUNCTION FLOAT ID LPAREN RPAREN LCURLY lines RCURLY"""
-    node = Function(p.lineno(1), p[3], p[2])
-    node.right = p[7]   # TODO right note for function code, left node for parameters?
+    """instruction : FUNCTION INT ID LPAREN RPAREN LCURLY lines return RCURLY
+    | FUNCTION FLOAT ID LPAREN RPAREN LCURLY lines return RCURLY"""
+    node = Function(p.lineno(1), p[3], p[2], p[8])
+    node.right = p[7]   # TODO right note for function code, left node for parameters
     p[0] = node
 
 
 def p_instruction_function_params(p):
-    """instruction : FUNCTION INT ID LPAREN params RPAREN LCURLY lines RCURLY
-    | FUNCTION FLOAT ID LPAREN params RPAREN LCURLY lines RCURLY"""
-    node = Function(p.lineno(1), p[3], p[2])
+    """instruction : FUNCTION INT ID LPAREN params RPAREN LCURLY lines return RCURLY
+    | FUNCTION FLOAT ID LPAREN params RPAREN LCURLY lines return RCURLY"""
+    node = Function(p.lineno(1), p[3], p[2], p[9])
     node.left = p[5]
-    node.right = p[8]   # TODO right note for function code, left node for parameters?
+    node.right = p[8]   # TODO right note for function code, left node for parameters
     p[0] = node
 
 
@@ -229,6 +231,21 @@ def p_function_params_one_int(p):
 def p_function_params_one_float(p):
     """params : FLOAT ID"""
     p[0] = Variable(p.lineno(2), p[2], Types.Float)
+
+
+def p_function_return_var(p):
+    """return : RETURN ID SEMICOLON"""
+    p[0] = Variable(p.lineno(2), p[2])
+
+
+def p_function_return_int(p):
+    """return : RETURN INT_VALUE SEMICOLON"""
+    p[0] = IntValue(p.lineno(2), p[2])
+
+
+def p_function_return_float(p):
+    """return : RETURN FLOAT_VALUE SEMICOLON"""
+    p[0] = FloatValue(p.lineno(2), p[2])
 
 
 def p_expression_binop(p):

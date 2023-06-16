@@ -14,17 +14,20 @@ else:
     """
 
     data = """
-    function int test(int a, float b){
+    function float test(int a, float b){
         float c;
         c = a + b;
         write(c);
+        return c;
     }
 
     int aa;
     aa = 1;
     float bb;
     bb = 2.0;
-    test(aa, bb);
+    float cc;
+    cc = test(aa, bb);
+    write(cc);
     """
 
     data2 = """
