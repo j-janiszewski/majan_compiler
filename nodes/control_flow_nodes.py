@@ -157,7 +157,8 @@ class Function(Instruction):
             next.write_param_code(ProgramMemory.buffer, next.name)
             next = next.left
 
-        self.right.write_code(ProgramMemory.buffer)
+        if self.right:
+            self.right.write_code(ProgramMemory.buffer)
         self.write_return_code(ProgramMemory.buffer, ret_type)
 
         ProgramMemory.buffer.append(f"}}\n")

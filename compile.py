@@ -14,6 +14,10 @@ else:
     """
 
     data = """
+    function int nope(int a){
+        return a;
+    }
+
     function float test(int a, float b){
         float c;
         c = a + b;

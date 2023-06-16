@@ -204,12 +204,27 @@ def p_instruction_function(p):
     p[0] = node
 
 
+def p_instruction_function_no_lines(p):
+    """instruction : FUNCTION INT ID LPAREN RPAREN LCURLY return RCURLY
+    | FUNCTION FLOAT ID LPAREN RPAREN LCURLY return RCURLY"""
+    node = Function(p.lineno(1), p[3], p[2], p[7])
+    p[0] = node
+
+
 def p_instruction_function_params(p):
     """instruction : FUNCTION INT ID LPAREN params RPAREN LCURLY lines return RCURLY
     | FUNCTION FLOAT ID LPAREN params RPAREN LCURLY lines return RCURLY"""
     node = Function(p.lineno(1), p[3], p[2], p[9])
     node.left = p[5]
     node.right = p[8]   # TODO right note for function code, left node for parameters
+    p[0] = node
+
+
+def p_instruction_function_params_no_lines(p):
+    """instruction : FUNCTION INT ID LPAREN params RPAREN LCURLY return RCURLY
+    | FUNCTION FLOAT ID LPAREN params RPAREN LCURLY return RCURLY"""
+    node = Function(p.lineno(1), p[3], p[2], p[8])
+    node.left = p[5]
     p[0] = node
 
 
