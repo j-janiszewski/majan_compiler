@@ -1,0 +1,260 @@
+%% Overleaf			
+%% Software Manual and Technical Document Template	
+%% 									
+%% This provides an example of a software manual created in Overleaf.
+
+\documentclass{ol-softwaremanual}
+
+% Packages used in this example
+\usepackage{graphicx}  % for including images
+\usepackage{listings}
+\usepackage{alltt}
+\usepackage{microtype} % for typographical enhancements
+\usepackage{minted}    % for code listings
+\usepackage{amsmath}   % for equations and mathematics
+\usepackage{tasks}
+\usepackage{amssymb}
+\setminted{style=friendly,fontsize=\small}
+\renewcommand{\listoflistingscaption}{List of Code Listings}
+\usepackage{hyperref}  % for hyperlinks
+\usepackage[a4paper,top=4.2cm,bottom=4.2cm,left=3.5cm,right=3.5cm]{geometry} % for setting page size and margins
+
+% Custom macros used in this example document
+\newcommand{\doclink}[2]{\href{#1}{#2}\footnote{\url{#1}}}
+\newcommand{\cs}[1]{\texttt{\textbackslash #1}}
+
+% Frontmatter data; appears on title page
+\title{MAJAN programming language \\User manual}
+\version{0.0.1}
+\author{Overleaf}
+
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\newpage
+
+\section{Introduction}
+
+This document is a user manual for MAJAN programming language. MAJAN was created as a project for "Formal languages and compilers" course at Warsaw University of Technology, by: Jan Janiszewski and Maciej Zalewski. In below sections you can find information about language syntax, how the instructions work and what are their limitations. 
+
+\section{Language elements}
+
+This section describes all elements of the MAJAN language broken down into keywords, operators, special symbols, identifiers and numbers.
+\subsection{Keywords}
+
+
+\begin{tasks}[label = {\bf \arabic*.}, label-align=left, label-offset={0mm}, label-width={5mm}, item-indent={5mm}, label-format={\bfseries}, column-sep=10mm](4)
+\task int
+\task float
+\task bool
+\task string
+\task if
+\task else
+\task while
+\task write
+\task read
+\task true
+\task false
+\task length
+\task function
+\task return
+
+\end{tasks}
+
+
+\subsection{Operators}
+
+\begin{tasks}[label = {\bf \arabic*.}, label-align=left, label-offset={0mm}, label-width={5mm}, item-indent={5mm}, label-format={\bfseries}, column-sep=10mm](4)
+\task = (assignment)
+\task + (adding)
+\task - (subtracting)
+\task $*$ (multiplying)
+\task / (dividing)
+\task == (is equal)
+\task > (is greater)
+\task >= (is greater or equal)
+\task < (is smaller)
+\task <= (is smaller or equal)
+\task $!$ (boolean negation)
+\task and (boolean and)
+\task or (boolean or)
+\task xor (boolean xor)
+\end{tasks}
+
+\subsection{Special symbols}
+
+\begin{tasks}[label = {\bf \arabic*.}, label-align=left, label-offset={0mm}, label-width={5mm}, item-indent={5mm}, label-format={\bfseries}, column-sep=10mm](4)
+\task ;
+\task ,
+\task (
+\task )
+\task \{
+\task \}
+\end{tasks}
+
+\subsection{Identifiers and numeric/text values}
+
+
+\textbf{Identifier} is a character string consisting of letters and numbers starting with a letter. Both upper and lower case letters are allowed and are distinguishable. A character string that is a keyword or operator cannot be used.\\[1\baselineskip]
+
+
+\textbf{Int value} is a sequence of digits, a leading zero is only allowed if it is the only digit. A number sign (\textbf{+} or \textbf{-}) may precede the sequence of digits. \\[1\baselineskip]
+
+\textbf{Float value} is a sequence of numbers denoting the whole part of a number, a decimal point and a sequence of digits denoting the fractional part of a number. All these elements are mandatory. A number sign (\textbf{+} or \textbf{-}) may precede the sequence of digits denoting whole part of a number. \\[1\baselineskip]
+
+\textbf{Text value} is a character string starting and ending with double quote symbol (\textbf{"}). \\[1\baselineskip]
+
+\subsection{Ignored elements}
+The following elements may also be part of programs written in <name>; they are ignored by the compiler:
+
+\textbf{Single line comment} - starts with hash symbol (\textbf{\#}), after it any sequence of characters can be placed\\[1\baselineskip]
+\textbf{Indendation} - leading spaces, either tabs (\textbf{\textbackslash t}) or whitespace .
+\section{Program structure}
+
+Program structure is important and it should be as follows:
+\begin{itemize}
+    \item global variables declarations
+    \item function declarations
+    \item main code
+\end{itemize}
+
+Example:
+\begin{alltt}
+int a, b;
+
+function int sum(int a, int b)
+\{
+    int c;
+    c = a + b;
+    write(c);
+    return 0;
+\}
+
+a = 3;
+b = 2;
+sum(a, b);
+\end{alltt}
+
+Code outside of function declarations is treated as a main function code. Every identifier that is used must be declared before usage.\t
+
+IDs work in order: local variables > global variables > functions. If there are global variable and local variable with the same ID, local variable has priority.
+
+\section{Declarations}
+
+\subsection{Variables}
+All variables must be declared before any value can be assigned. One can declare many variables at a time, but only with the same type. Variables are declared by writing type and ID. There cannot be two global (or two local) variables with the same ID.
+\begin{alltt}
+int a;
+float b, c, d;
+string s;
+bool tr;
+\end{alltt}
+Variables declared outside of the function declaration are treated as global variables that can be accessed inside functions. They should be declared at the very beginning of the program. Variables cannot be declared inside if statements and loops.
+
+\subsection{Functions}
+Functions should be declared after global variables. The order of declaration matters, if one wants to nest functions, the nested one should be declared first. Function declaration must have \textbf{function} keyword followed by return type (\textbf{int} or \textbf{float}), then ID and in parentheses one can pass parameters by specifying type (\textbf{int} or \textbf{float}) and ID. Code of the function must be between curly brackets and at the end one must specify returned value explicitly.
+
+\begin{alltt}
+function float sum(int a, float b)
+\{
+    float c;
+    c = a + b;
+    return c;
+\}
+
+function int myWrite(int a, float b)
+\{
+    float c;
+    c = sum(a, b);
+    write(c);
+    return 0;
+\}
+\end{alltt}
+
+Variables declared in the function are visible only inside it.
+
+\section{Instructions}
+The language allows the following instructions to be included:
+\subsection{Expression}
+An expression statement is any expression followed by a semicolon. 
+Examples:
+\begin{alltt}
+n = 1;
+x+y;
+(a>= 0 and a<10) or b >3;
+677.4343;
+\end{alltt}
+As can be seen above, it is possible to add brackets to expressions to split them into sub-expressions. Both values and predefined variables can be used in expressions. The keywords \textbf{true} and \textbf{true}  represent the respective boolean values.
+\subsubsection{Arthmetic operators}
+Arthmetic operators can only be used on integer and float values, but is possible to mix them:
+\begin{alltt}
+6 + 0.6;
+\end{alltt}
+The value of this expression will be of type float. Exception to the rule mentioned at the beginning of this section is string type. It is possible to add string values together, result of such operation is concatenation of these strings.
+\subsubsection{Comparison operators}
+Comparison operators can only be used on matching types. String type is not supported.
+\subsubsection{Boolean operators}
+Boolean operators can only be used on boolean values. Short-circuit boolean evaluation is implemented.
+\subsection{If instruction}
+The \textbf{if} statement has two forms with and without \textbf{else}.
+\subsubsection{If with else}
+It starts with the \textbf{if} keyword followed by a boolean expression enclosed in brackets. This is followed by a sequence of instructions enclosed in braces, then the keyword \textbf{else} and further instructions enclosed in brackets.
+If condition is evaluated to \textbf{true} then instructions after \textbf{if} are executed.
+Example:
+\begin{alltt}
+int a;
+if(2 > 4)\{
+a = 6;
+\} else\{
+a = 8;
+\}
+\end{alltt}
+\subsubsection{If without else}
+The operation and syntax of this form is analogous except that the \textbf{else} keyword and the second set of instructions are absent.
+Example:
+\begin{alltt}
+int a, b;
+a=6;
+if(a > 0)\{
+b= a +1;
+\} 
+\end{alltt}
+
+\subsection{Loop instruction}
+A loop statement begins with a \textbf{while} keyword followed by a boolean expression enclosed in brackets, followed by a sequence of statements enclosed in curly brackets. The operation of the loop is standard: as long as the expression is true, the instructions are repeated.
+
+Example:
+\begin{alltt}
+int a;
+a=6
+while(a <10)\{
+a= a +1;
+\} 
+\end{alltt}
+
+\subsection{Read instruction}
+The read instruction starts with the keyword \textbf{read} followed by an identifier enclosed in brackets and then a semicolon. As a result of executing the instruction, the variable specified by the identifier receives the value loaded from the input stream.
+Example:
+\begin{alltt}
+int a;
+read(a); 
+\end{alltt}
+Reading the values of boolean variables is not supported.
+
+\subsection{Write instruction}
+The write instruction starts with the keyword \textbf{write} followed by an expression enclosed in brackets. As a result of executing the instruction, value of provided expression is displayed on output stream.
+Example: 
+\begin{alltt}
+write(2 + 5 * 3 + 3);
+\end{alltt}
+\section{Compiling source files}
+In order to compile your source file to LLVM code following command should be executed:
+\begin{lstlisting}[language=bash]
+  python compile.py <path_to_your_source_file>
+\end{lstlisting}
+In the same directory where compile.py is located file named output.ll sould appear.
+\end{document}
